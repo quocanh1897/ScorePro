@@ -6,21 +6,18 @@ using namespace std;
 namespace fs = boost::filesystem;
 
 void compileFile(fs::path IDFolderWD, string ID, string fileName) {
-	//string thisFile = IDFolderWD.string();
-
-	//cout << fileName << " need compile" << endl;
-	//cout << IDFolderWD.string()<< endl;
-
+	//file exe nay se duoc tao boi g++
 	string exeName = fileName.substr(0,fileName.find(".")) + ".exe";
-	fs::path exePath = IDFolderWD / exeName; string exePathStr = exePath.string();
-	fs::path filePath = IDFolderWD / fileName; string filePathStr = filePath.string();
+	fs::path exePath = IDFolderWD / exeName; 
+	string exePathStr = exePath.string();
+
+	//duong dan cua file .cpp can compile
+	fs::path filePath = IDFolderWD / fileName; 
+	string filePathStr = filePath.string();
+
+	//cu phap g++ compile file thanh exeFile
 	string compileCmd = "g++ -o " + exePathStr + " " + filePathStr;
 	string runCmd = exePathStr;
-
-	 
-	cout << compileCmd << endl;
-	cout << runCmd << endl;
-
 	
 	system(compileCmd.c_str());
 	system(runCmd.c_str());
@@ -30,7 +27,9 @@ bool checkFolderNotExistOrChange(fs::path workingDir, fs::path submitFol,
 	string IDStudent) {
 	fs::path IDFolderInWorkingDir = workingDir / IDStudent;
 	fs::path IDFolderInSubmitFol = submitFol / IDStudent;
+
 	if (!fs::exists(IDFolderInWorkingDir)) {//this is a brand new IDFolder
+		//copy directory from submitFoler to workingDir
 		fs::copy(IDFolderInSubmitFol, IDFolderInWorkingDir);	
 	}
 		
@@ -41,6 +40,7 @@ bool checkFolderNotExistOrChange(fs::path workingDir, fs::path submitFol,
 		
 		string curFileName = file->path().filename().string();
 		fs::path desFileName = workingDir /IDStudent/curFileName;
+
 		if (!fs::exists(desFileName) ||
 			fs::exists(desFileName) &&
 			fs::file_size(desFileName) != fs::file_size(file->path())) {
@@ -56,8 +56,8 @@ bool checkFolderNotExistOrChange(fs::path workingDir, fs::path submitFol,
 }
 
 int main() {
-	fs::path workingDir("D:\\workingDir");
-	fs::path submitFolder("D:\\submitFolder");
+	fs::path workingDir("D:\\workingDir"); //folder lam viec cua chuong trinh
+	fs::path submitFolder("D:\\submitFolder"); //folder chua cac thu muc nop bai cua SV
 	string ID = "1610081";
 	fs::path IDFolder = submitFolder / ID;
 
