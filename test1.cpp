@@ -1,12 +1,29 @@
 #include <boost/filesystem.hpp>
 #include <iostream>
+#include <string>
 
 using namespace std;
 namespace fs = boost::filesystem;
 
-void compileFile(fs::path input) {
-	string thisFile = input.string();
-	cout << input << " need compile" << endl;
+void compileFile(fs::path IDFolderWD, string ID, string fileName) {
+	//string thisFile = IDFolderWD.string();
+
+	//cout << fileName << " need compile" << endl;
+	//cout << IDFolderWD.string()<< endl;
+
+	string exeName = fileName.substr(0,fileName.find(".")) + ".exe";
+	fs::path exePath = IDFolderWD / exeName; string exePathStr = exePath.string();
+	fs::path filePath = IDFolderWD / fileName; string filePathStr = filePath.string();
+	string compileCmd = "g++ -o " + exePathStr + " " + filePathStr;
+	string runCmd = exePathStr;
+
+	 
+	cout << compileCmd << endl;
+	cout << runCmd << endl;
+
+	
+	system(compileCmd.c_str());
+	system(runCmd.c_str());
 }
 
 bool checkFolderNotExistOrChange(fs::path workingDir, fs::path submitFol,
@@ -28,14 +45,13 @@ bool checkFolderNotExistOrChange(fs::path workingDir, fs::path submitFol,
 			fs::exists(desFileName) &&
 			fs::file_size(desFileName) != fs::file_size(file->path())) {
 
-			compileFile(file->path());
 			fs::copy_file(file->path(), workingDir / IDStudent / curFileName,fs::copy_option::overwrite_if_exists);
+
+			compileFile(workingDir / IDStudent, IDStudent, curFileName);
 		}
 		
 	}
-	cout << "success \n";
-
-
+	
 	return true;
 }
 
