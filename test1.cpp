@@ -5,6 +5,7 @@
 #include "BKavltree.h"
 #include <ctime>
 using namespace std;
+
 using namespace boost::filesystem;
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub) {
 	if(Data.search(ID)) Data.search(ID)->numberSub--;
@@ -27,8 +28,10 @@ void compileFile(path FolderWD, string ID, string fileName,string sub) {
 	//noi chua file .cpp
 	path cppPath = FolderWD /ID/sub/ fileName;
 	string compileCmd = "g++ -o " + objPath.string() + " " + cppPath.string();
+
 	system(compileCmd.c_str());
 }
+
 bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
 	bool flag = false;//da tim thay quantity chua
 	int quantity = 0;//so luong file
@@ -48,6 +51,7 @@ bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
 			file_size(desFileName) != file_size(file->path())) {
 			copy(file->path(), workingDir / ID/sub/ curFileName);
 		}
+
 
 		//tim so luong file
 		if (!curFileName.compare("pro.xml")) {
@@ -149,6 +153,7 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 	return 1;
 }
 int main() {
+
 	//path lam vc
 	path workingDir("D:\\workingDir");
 	path submitFolder("D:\\submitFolder");
@@ -160,6 +165,7 @@ int main() {
 	while (1) {
 		checkID(DataID, submitFolder, workingDir);
 	}
+
 
 	system("pause");
 }
