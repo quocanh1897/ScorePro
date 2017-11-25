@@ -5,6 +5,7 @@
 #include "BKavltree.h"
 #include <ctime>
 using namespace std;
+<<<<<<< HEAD
 
 using namespace boost::filesystem;
 
@@ -106,6 +107,85 @@ bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
 				child1 = child1->NextSiblingElement();
 			}		
 		}
+=======
+
+using namespace boost::filesystem;
+bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub) {
+	if(Data.search(ID)) Data.search(ID)->numberSub--;
+	path subfolder = workingDir / ID / sub;
+	for (directory_iterator file(subfolder); file != directory_iterator(); ++file) {
+		string filename = file->path().filename().string();//lay ra ten file
+		path temp = subfolder / filename;
+		remove(temp);
+	}
+	remove(workingDir / ID / sub);
+	return true;
+}
+void compileFile(path FolderWD, string ID, string fileName,string sub) {
+	string objName = fileName.substr(0,fileName.find(".")) + ".obj";
+	//tao thu muc build
+	path temp{ FolderWD /ID/sub/ "build" };
+	create_directory(temp);
+	//noi chua file .obj
+	path objPath = temp / objName;
+	//noi chua file .cpp
+	path cppPath = FolderWD /ID/sub/ fileName;
+	string compileCmd = "g++ -o " + objPath.string() + " " + cppPath.string();
+
+	system(compileCmd.c_str());
+}
+
+bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
+	bool flag = false;//da tim thay quantity chua
+	int quantity = 0;//so luong file
+	int count = 0;//dem
+	path IDFolderInWorkingDir = workingDir /ID/sub;
+	path IDFolderInSubmitFol = submitFol /ID/sub;
+		//this is a brand new IDFolder
+	create_directory(workingDir / ID);
+	create_directory(workingDir / ID/sub);
+	for (directory_iterator file(IDFolderInSubmitFol);file != directory_iterator(); ++file) {
+		//dem file da duoc doc sang
+		count++;
+		string curFileName = file->path().filename().string();
+		path desFileName = workingDir /ID/sub/curFileName;
+		if (!exists(desFileName) ||
+			exists(desFileName) &&
+			file_size(desFileName) != file_size(file->path())) {
+			copy(file->path(), workingDir / ID/sub/ curFileName);
+		}
+
+
+		//tim so luong file
+		if (!curFileName.compare("pro.xml")) {
+			//chuyen string ve char* de dung ham doc
+			char * writable = new char[desFileName.string().size() + 1];
+			for (int i = 0; i < desFileName.string().length()+1; i++) {
+				if (i == desFileName.string().length()) writable[i] = '\0';
+				else writable[i] = desFileName.string()[i];
+				
+			}
+			TiXmlDocument doc(writable);
+			if (!doc.LoadFile())
+			{
+				//printf("%s", doc.ErrorDesc());
+				return 0;
+			}
+			TiXmlElement* root = doc.RootElement();
+			TiXmlElement* child1 = root->FirstChildElement();
+			while (child1) {
+				string temp = "quantity";
+				if (!temp.compare(child1->ValueTStr().c_str()))
+				{
+					quantity = atoi(child1->GetText());
+					flag = true;
+					if (quantity == count&&flag) return true;
+					break;
+				}
+				child1 = child1->NextSiblingElement();
+			}		
+		}
+>>>>>>> 2ef636ef3755e6007ae8a1842309e333c418aba6
 		if (quantity == count+1&&flag) return true;
 	}
 	return false;
@@ -190,5 +270,9 @@ int main() {
 		checkID(DataID, submitFolder, workingDir);
 	}
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2ef636ef3755e6007ae8a1842309e333c418aba6
 	system("pause");
 }
