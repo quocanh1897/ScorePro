@@ -1,3 +1,5 @@
 ﻿  test1.cpp
-  testBoostLib.vcxproj -> D:\OneDrive - vietscience\ctdl\Assignment1\Debug\testBoostLib.exe
-  testBoostLib.vcxproj -> D:\OneDrive - vietscience\ctdl\Assignment1\Debug\testBoostLib.pdb (Partial PDB)
+c:\users\dang phu trung tin\desktop\dsa-assignment1\test1.cpp(44): warning C4018: '<': signed/unsigned mismatch
+c:\users\dang phu trung tin\desktop\dsa-assignment1\test1.cpp(106): warning C4018: '<': signed/unsigned mismatch
+  testBoostLib.vcxproj -> C:\Users\Dang Phu Trung Tin\Desktop\DSA-Assignment1\Debug\testBoostLib.exe
+  testBoostLib.vcxproj -> C:\Users\Dang Phu Trung Tin\Desktop\DSA-Assignment1\Debug\testBoostLib.pdb (Partial PDB)
