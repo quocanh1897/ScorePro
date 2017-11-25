@@ -3,9 +3,20 @@
 #include <string>
 #include "tinyxml.h"
 #include "BKavltree.h"
+#include <ctime>
 using namespace std;
 using namespace boost::filesystem;
-
+bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub) {
+	if(Data.search(ID)) Data.search(ID)->numberSub--;
+	path subfolder = workingDir / ID / sub;
+	for (directory_iterator file(subfolder); file != directory_iterator(); ++file) {
+		string filename = file->path().filename().string();//lay ra ten file
+		path temp = subfolder / filename;
+		remove(temp);
+	}
+	remove(workingDir / ID / sub);
+	return true;
+}
 void compileFile(path FolderWD, string ID, string fileName,string sub) {
 	string objName = fileName.substr(0,fileName.find(".")) + ".obj";
 	//tao thu muc build
@@ -19,6 +30,7 @@ void compileFile(path FolderWD, string ID, string fileName,string sub) {
 	system(compileCmd.c_str());
 }
 bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
+	bool flag = false;//da tim thay quantity chua
 	int quantity = 0;//so luong file
 	int count = 0;//dem
 	path IDFolderInWorkingDir = workingDir /ID/sub;
@@ -54,9 +66,19 @@ bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
 			}
 			TiXmlElement* root = doc.RootElement();
 			TiXmlElement* child1 = root->FirstChildElement();
-			quantity=atoi(child1->GetText());
-			if (quantity <= count) return true;
+			while (child1) {
+				string temp = "quantity";
+				if (!temp.compare(child1->ValueTStr().c_str()))
+				{
+					quantity = atoi(child1->GetText());
+					flag = true;
+					if (quantity == count&&flag) return true;
+					break;
+				}
+				child1 = child1->NextSiblingElement();
+			}		
 		}
+		if (quantity == count+1&&flag) return true;
 	}
 	return false;
 }
@@ -92,15 +114,25 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 		int count = 0;
 		//duyet tuan tu file sub
 		for (directory_iterator filesub(submitFolder/IDNameFolder); filesub != directory_iterator(); ++filesub) {
-				count++;
+			bool error = false;
+			count++;
 				if (count > dataID.search(IDNameFolder)->numberSub) {
 					dataID.search(IDNameFolder)->numberSub++;
 					string ID = IDNameFolder;
 					string sub = "sub" + to_string(dataID.search(IDNameFolder)->numberSub);
+					double starttime = clock();
 					//copy den khi nao du file thi thoi nho` vao quantity trong xml
 					while (1) {
-						if (Copyfile(workingDir, submitFolder, ID, sub) == true) break;
+						if (Copyfile(workingDir, submitFolder, ID, sub)==true) break;
+						double deltatime = (clock()-starttime)/ double(CLOCKS_PER_SEC);
+						//neu 20s ma khong du file thi xoa het ,and then,ID nay` dua xuong cuoi ,den luot nhung ID tiep theo.
+						if (deltatime > 20) {
+							DeleteSubFolder(dataID,workingDir, ID, sub);
+							error = true;
+							break;
+						}
 					}
+					if (error) break;
 					//-----compile nho file xml-----
 					path xml = workingDir / ID / sub / "pro.xml";
 					string xmlStr = xml.string();
@@ -113,7 +145,6 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 					//--------------------------------
 			}
 		}
-		
 	}
 	return 1;
 }
@@ -125,8 +156,10 @@ int main() {
 	avlTree DataID;
 	//check file
 	//thu tu uu tien la flie ID ben trong co file sub dau tien
-	while (1) {
+	
+	//while (1) {
 		checkID(DataID, submitFolder, workingDir);
-	}
+	//}
+
 	system("pause");
 }
