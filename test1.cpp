@@ -157,9 +157,9 @@ int main() {
 	//check file
 	//thu tu uu tien la flie ID ben trong co file sub dau tien
 	
-	//while (1) {
+	while (1) {
 		checkID(DataID, submitFolder, workingDir);
-	//}
+	}
 
 	system("pause");
 }
