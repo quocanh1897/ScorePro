@@ -1,3 +1,15 @@
+<<<<<<< HEAD
+<<<<<<< HEAD
 ﻿  test1.cpp
-  testBoostLib.vcxproj -> D:\OneDrive - vietscience\ctdl\Assignment1\Debug\testBoostLib.exe
-  testBoostLib.vcxproj -> D:\OneDrive - vietscience\ctdl\Assignment1\Debug\testBoostLib.pdb (Partial PDB)
+  testBoostLib.vcxproj -> D:\OneDrive - vietscience\CTDL\Assignment1\Debug\testBoostLib.exe
+  testBoostLib.vcxproj -> D:\OneDrive - vietscience\CTDL\Assignment1\Debug\testBoostLib.pdb (Partial PDB)
+=======
+﻿cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
+  test1.cpp
+c:\users\dang phu trung tin\desktop\dsa-assignment1\test1.cpp : fatal error C1041: cannot open program database 'C:\Users\Dang Phu Trung Tin\Desktop\DSA-Assignment1\Debug\vc140.idb'; if multiple CL.EXE write to the same .PDB file, please use /FS
+>>>>>>> 2ef636ef3755e6007ae8a1842309e333c418aba6
+=======
+﻿cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
+  test1.cpp
+c:\users\dang phu trung tin\desktop\dsa-assignment1\test1.cpp : fatal error C1041: cannot open program database 'C:\Users\Dang Phu Trung Tin\Desktop\DSA-Assignment1\Debug\vc140.idb'; if multiple CL.EXE write to the same .PDB file, please use /FS
+>>>>>>> 2ef636ef3755e6007ae8a1842309e333c418aba6
