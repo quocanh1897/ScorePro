@@ -1,5 +1,6 @@
 ﻿  test1.cpp
-d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(60): warning C4018: '<': signed/unsigned mismatch
-d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(147): warning C4018: '<': signed/unsigned mismatch
+d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(64): warning C4018: '<': signed/unsigned mismatch
+d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(151): warning C4018: '<': signed/unsigned mismatch
+d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(165): warning C4101: 'a': unreferenced local variable
   testBoostLib.vcxproj -> D:\OneDrive - vietscience\CTDL\Assignment1\Debug\testBoostLib.exe
   testBoostLib.vcxproj -> D:\OneDrive - vietscience\CTDL\Assignment1\Debug\testBoostLib.pdb (Partial PDB)

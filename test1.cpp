@@ -4,9 +4,13 @@
 #include "tinyxml.h"
 #include "BKavltree.h"
 #include <ctime>
-using namespace std;
+#include<fstream>
+#include<sstream>
+
+//using namespace std;
 
 using namespace boost::filesystem;
+
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub) {
 	if(Data.search(ID)) Data.search(ID)->numberSub--;
 	path subfolder = workingDir / ID / sub;
@@ -156,15 +160,65 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 	return 1;
 }
 
-void runFileSub(path workingDir, string ID, avlTree &dataID) {
-	path temp = workingDir / ID;
-	string IDNameFolder = temp.string();
+void scoreOutput(path workingDir, string ID, string fileToScore, avlTree &dataID, int numTestcase) {
+	int dem = 0;
+	int a[50];
+	string fileChange = fileToScore.substr(0, fileToScore.find("."));
+	node *numofSub = dataID.search(ID);
+	string s = "sub" + to_string(numofSub->numberSub);
+	path pathDaFile = workingDir / ID / s / "build" ;
+	string daFile = pathDaFile.string() + "\\outputda" + fileChange + "_" + to_string(numTestcase) + ".txt";
+	// so luong phan tu cua dap an
+	std::ifstream in1;
+	//in1.open(daFile);
+	in1.open(daFile);
+	while (!in1.eof())
+	{
+		string temp1 = "";
+		getline(in1, temp1);
+		dem = dem + 1;
+	}
+	in1.close();
+	/////////////////////////////
+	std::ifstream in1_1;
+	in1_1.open(daFile);///doc DA giam khao
+	std::ifstream in2;
+	string thisinhFile = pathDaFile.string() + "\\output" + fileChange + "_" + to_string(numTestcase) + ".txt";
+	in2.open(thisinhFile);//doc DA thi sinh
+	int dung = 0;
+	for (int k = 0; k <= dem - 2; k++)
+	{
+		string temp1 = "";
+		getline(in1_1, temp1);
+		string temp2 = "";
+		getline(in2, temp2);
+		if (temp1 == temp2)//so DA
+		{
+			dung = dung + 1;// dem so luong kq dung
+		}
+	}
+	in1_1.close();
+	in2.close();
+	double diem = (dung) / (double)(dem - 1);//tan so dung
+	std::ofstream out;
+	string scoreFile = pathDaFile.string() + "\\scoreOf" + fileChange + ".txt";
+
+	out.open(scoreFile, ios_base::app);
+	out << "testcase " <<numTestcase<< ": "<< diem*100 << "%"<< endl;// luu tan so dung vao file output
+	out.close();
+	//print(a, dem);
+	return;
+}
+
+void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID) {
+	//path temp = workingDir / ID;
+	//string IDNameFolder = temp.string();
 	
 	node *numofSub = dataID.search(ID);
 	if (numofSub == NULL) {
 		return;
 	}
-
+	
 	for (int i = 0; i < numofSub->numberSub; i++) {//run numofSub lan
 		string s = "sub" + to_string(i + 1);
 		path build = workingDir / ID / s / "build";
@@ -172,46 +226,63 @@ void runFileSub(path workingDir, string ID, avlTree &dataID) {
 			return;
 		}
 
-		for (int baiso = 1; baiso != 2; baiso++) {
-			//rename input1.txt -> input.txt
-			string inputNum = "input" + to_string(baiso) + '_' + to_string(i + 1) + ".txt";
-			path inputFile = build / inputNum;
-			string tempname = "input" + to_string(baiso) + ".txt";
-			path reNameInputFile = build / tempname;
-			rename(inputFile, reNameInputFile);
+		list<string> objFile;
+		for (directory_iterator fileObj(build);
+			fileObj != directory_iterator(); ++fileObj) {
+			string t = fileObj->path().filename().string();
+			objFile.push_back(t);
+		}
 
-			for (directory_iterator fileToScore(build);
-				fileToScore != directory_iterator(); ++fileToScore) {
-				if (fileToScore->path().string().find(".") < fileToScore->path().string().length()) {
-					string cpp = fileToScore->path().string().substr(fileToScore->path().string().find(".") + 1, cpp.length() - 1);
-					
-					if (!cpp.compare("obj"))//run file "bai tap . obj"
-					{
-						string cdDirectory = "pushd " + build.string();
-						string cmdRunFileToScore = cdDirectory + "&&" + fileToScore->path().filename().string();
-						system(cmdRunFileToScore.c_str());
-						
-						//rename ouput1.txt -> output1_1.txt
-						string outputNum = "output" + to_string(baiso) + '_' + to_string(i + 1) + ".txt";
-						string tempnameout = "output" + to_string(baiso) + ".txt";
-						path outputFile = build / tempnameout;
-						path reNameOutputFile = build / outputNum;
-						rename(outputFile, reNameOutputFile);
+		for each (string file in objFile){
+			for (int numTestcase = 1; numTestcase <= 5; numTestcase++) {
+				//copy testcase\input1.txt -> build\input.txt
+				string fileChange = file.substr(0, file.find(".") );
+				string inputNum = "testcase\\input" + fileChange + '_' + to_string(numTestcase) + ".txt";
+				path inputFile = workingDir / inputNum;
+				string tempname = "input" + fileChange + ".txt";
+				path reNameInputFile = build / tempname;
+				copy_file(inputFile, reNameInputFile);
 
-						//rename input1.txt -> input1_1.txt
-						rename(reNameInputFile, inputFile);
-					}
-				}
+				string cdDirectory = "pushd " + build.string();
+				string cmdRunFileToScore = cdDirectory + " && " + file;
+
+				system(cmdRunFileToScore.c_str());
+
+				//rename ouput1.txt -> output1_1.txt
+				string outputNum = "output" + fileChange + '_' + to_string(numTestcase) + ".txt";
+				string tempnameout = "output" + fileChange + ".txt";
+				path outputFile = build / tempnameout;
+				path reNameOutputFile = build / outputNum;
+				rename(outputFile, reNameOutputFile);
+
+				remove(reNameInputFile);
 				
+			}
+			
+		}
+		
 
+		//score output in subx
+		for each (string file in objFile) {
+			for (int numTestcase = 1; numTestcase <= 5; numTestcase++) {
+				//copy testcase\input1.txt -> build\input.txt
+				string nameFileDapAn = file.substr(0, file.find("."));
+				string daNum = "outputda" + nameFileDapAn + '_' + to_string(numTestcase) + ".txt";
+				path daFile = workingDir / "testcase" / daNum;
+				path reNameDAFile = build / daNum;
+				copy_file(daFile, reNameDAFile);
+
+
+				scoreOutput(workingDir, ID, file, dataID, numTestcase);
+				remove(reNameDAFile);
 
 			}
 		}
 		
 	}
-	//path scoreFile = workingDir / ID / s;
-
+	
 }
+
 
 int main() {
 
@@ -223,12 +294,12 @@ int main() {
 	//check file
 	//thu tu uu tien la flie ID ben trong co file sub dau tien
 	
-	/*while (1) {
+	//while (1) {
 		checkID(DataID, submitFolder, workingDir);
-		runFileSub(workingDir, "1610081", DataID);
-	}*/
+		runThenScoreFileSub(workingDir, "1610081", DataID);
+	//}
 
-	checkID(DataID, submitFolder, workingDir);
-	runFileSub(workingDir, "1610081", DataID);
-	system("pause");
+	//checkID(DataID, submitFolder, workingDir);
+	//runThenScoreFileSub(workingDir, "1610081", DataID);
+	//system("pause");
 }
