@@ -6,7 +6,7 @@ using namespace std;
 enum status { LH = -1, EH, RH };
 struct node {
 	string key ="";
-	int numberSub=0;
+	int numberSub = 0;
 	node* left = NULL;
 	node* right = NULL;
 	status balance = EH;

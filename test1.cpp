@@ -58,8 +58,10 @@ bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
 			//chuyen string ve char* de dung ham doc
 			char * writable = new char[desFileName.string().size() + 1];
 			for (int i = 0; i < desFileName.string().length()+1; i++) {
-				if (i == desFileName.string().length()) writable[i] = '\0';
-				else writable[i] = desFileName.string()[i];
+				if (i == desFileName.string().length()) 
+					writable[i] = '\0';
+				else 
+					writable[i] = desFileName.string()[i];
 				
 			}
 			TiXmlDocument doc(writable);
@@ -114,7 +116,8 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 	for (directory_iterator file(submitFolder); file != directory_iterator(); ++file) {
 		string IDNameFolder = file->path().filename().string();//lay ra ten ID
 		//ID bo vao database neu chua co
-		if (!dataID.search(IDNameFolder)) dataID.AVLInsert(dataID.root, new node(IDNameFolder, 0), dataID.taller);	
+		if (!dataID.search(IDNameFolder)) 
+			dataID.AVLInsert(dataID.root, new node(IDNameFolder, 0), dataID.taller);	
 		int count = 0;
 		//duyet tuan tu file sub
 		for (directory_iterator filesub(submitFolder/IDNameFolder); filesub != directory_iterator(); ++filesub) {
@@ -146,12 +149,70 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 						else writable[i] = xmlStr[i];
 					}
 					CompilethroughXML(writable, workingDir, ID, sub);
-					//--------------------------------
+					//--------------------------------//
 			}
 		}
 	}
 	return 1;
 }
+
+void runFileSub(path workingDir, string ID, avlTree &dataID) {
+	path temp = workingDir / ID;
+	string IDNameFolder = temp.string();
+	
+	node *numofSub = dataID.search(ID);
+	if (numofSub == NULL) {
+		return;
+	}
+
+	for (int i = 0; i < numofSub->numberSub; i++) {//run numofSub lan
+		string s = "sub" + to_string(i + 1);
+		path build = workingDir / ID / s / "build";
+		if (!exists(build)) {
+			return;
+		}
+
+		for (int baiso = 1; baiso != 2; baiso++) {
+			//rename input1.txt -> input.txt
+			string inputNum = "input" + to_string(baiso) + '_' + to_string(i + 1) + ".txt";
+			path inputFile = build / inputNum;
+			string tempname = "input" + to_string(baiso) + ".txt";
+			path reNameInputFile = build / tempname;
+			rename(inputFile, reNameInputFile);
+
+			for (directory_iterator fileToScore(build);
+				fileToScore != directory_iterator(); ++fileToScore) {
+				if (fileToScore->path().string().find(".") < fileToScore->path().string().length()) {
+					string cpp = fileToScore->path().string().substr(fileToScore->path().string().find(".") + 1, cpp.length() - 1);
+					
+					if (!cpp.compare("obj"))//run file "bai tap . obj"
+					{
+						string cdDirectory = "pushd " + build.string();
+						string cmdRunFileToScore = cdDirectory + "&&" + fileToScore->path().filename().string();
+						system(cmdRunFileToScore.c_str());
+						
+						//rename ouput1.txt -> output1_1.txt
+						string outputNum = "output" + to_string(baiso) + '_' + to_string(i + 1) + ".txt";
+						string tempnameout = "output" + to_string(baiso) + ".txt";
+						path outputFile = build / tempnameout;
+						path reNameOutputFile = build / outputNum;
+						rename(outputFile, reNameOutputFile);
+
+						//rename input1.txt -> input1_1.txt
+						rename(reNameInputFile, inputFile);
+					}
+				}
+				
+
+
+			}
+		}
+		
+	}
+	//path scoreFile = workingDir / ID / s;
+
+}
+
 int main() {
 
 	//path lam vc
@@ -162,10 +223,12 @@ int main() {
 	//check file
 	//thu tu uu tien la flie ID ben trong co file sub dau tien
 	
-	while (1) {
+	/*while (1) {
 		checkID(DataID, submitFolder, workingDir);
-	}
+		runFileSub(workingDir, "1610081", DataID);
+	}*/
 
-
+	checkID(DataID, submitFolder, workingDir);
+	runFileSub(workingDir, "1610081", DataID);
 	system("pause");
 }
