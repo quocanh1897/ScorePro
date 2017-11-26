@@ -7,9 +7,22 @@
 #include<fstream>
 #include<sstream>
 
-//using namespace std;
-
 using namespace boost::filesystem;
+
+//------------->>>>  PROTOTYPE  <<<<-------------//
+
+bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
+bool Copyfile(path workingDir, path submitFol, string ID, string sub);
+bool CompilethroughXML(const char* link, path workingDir, string ID, string sub);
+bool checkID(avlTree &dataID, path submitFolder, path workingDir);
+
+void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID);
+void compileFile(path FolderWD, string ID, string fileName, string sub);
+void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
+void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID);
+
+
+//------------->>>>  IMPLEMENT <<<<-------------//
 
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub) {
 	if(Data.search(ID)) Data.search(ID)->numberSub--;
@@ -22,6 +35,7 @@ bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub) {
 	remove(workingDir / ID / sub);
 	return true;
 }
+
 void compileFile(path FolderWD, string ID, string fileName,string sub) {
 	string objName = fileName.substr(0,fileName.find(".")) + ".obj";
 	//tao thu muc build
@@ -92,6 +106,7 @@ bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
 	}
 	return false;
 }
+
 bool CompilethroughXML(const char* link,path workingDir,string ID,string sub) {
 	TiXmlDocument doc(link);
 	if (!doc.LoadFile())
@@ -115,6 +130,7 @@ bool CompilethroughXML(const char* link,path workingDir,string ID,string sub) {
 	}
 	return 1;
 }
+
 bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 	//duyet tuan tu file submitFolder
 	for (directory_iterator file(submitFolder); file != directory_iterator(); ++file) {
@@ -154,9 +170,11 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 					}
 					CompilethroughXML(writable, workingDir, ID, sub);
 					//--------------------------------//
+					//runThenScoreFileSub(workingDir, ID, dataID);
 			}
 		}
 	}
+	
 	return 1;
 }
 
@@ -181,7 +199,7 @@ void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, 
 	in1.close();
 	/////////////////////////////
 	std::ifstream in1_1;
-	in1_1.open(daFile);///doc DA giam khao
+	in1_1.open(daFile);//doc DA giam khao
 	std::ifstream in2;
 	string thisinhFile = pathDaFile.string() + "\\output" + fileChange + "_" + to_string(numTestcase) + ".txt";
 	in2.open(thisinhFile);//doc DA thi sinh
@@ -200,29 +218,98 @@ void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, 
 	in1_1.close();
 	in2.close();
 	double diem = (dung) / (double)(dem - 1);//tan so dung
-	std::ofstream out;
+	std::fstream out;
 	string scoreFile = pathDaFile.string() + "\\scoreOf" + fileChange + ".txt";
 
 	out.open(scoreFile, ios_base::app);
-	out << "testcase " <<numTestcase<< ": "<< diem*100 << "%"<< endl;// luu tan so dung vao file output
+	if (numTestcase == 5) {
+		out << "testcase " << numTestcase << ": " << diem * 10 << endl;
+		out.close();
+		
+		//open file to calculate total score
+		out.open(scoreFile, ios_base::in);
+		float *score = new float[5];
+		for (int i = 0; i < 5; i++) {
+			string line = "";
+			int num;
+			getline(out, line);
+			
+			stringstream tempLine(line);
+			tempLine >> line >> num >> line >> score[i];
+
+		}
+		out.close();
+		out.open(scoreFile, ios_base::app);
+		float sum = 0;
+		for (int i = 0; i < 5; i++) {
+			sum += score[i];
+		}
+		out << "Total: " << sum / 5;
+		out.close();
+		return;
+	}
+
+	out << "testcase " << numTestcase << ": " << diem * 10 << endl;// luu tan so dung vao file output
 	out.close();
-	//print(a, dem);
 	return;
 }
 
+void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn) {
+	int dem = 0;
+	string s = "sub" + to_string(subNumber);
+	path pathDaFile = workingDir / ID / s / "build";
+	string scoreFile1 = pathDaFile.string() + "\\scoreOf1.txt";
+	string scoreFile2 = pathDaFile.string() + "\\scoreOf2.txt";
+	string totalScore = pathDaFile.string() + "\\score.txt";
+
+	std::fstream in;
+	string line;
+	float score1, score2;
+	//open scoreOf1 to save score of program1
+	in.open(scoreFile1, ios_base::in);
+	for (int i = 0; i < 5; i++) {
+		string temp;
+		getline(in, temp);
+	}
+	getline(in, line);
+	stringstream tempLine(line);
+	tempLine >> line >> score1;
+	in.close();
+
+	//open scoreOf2 to save score of program2
+	in.open(scoreFile2, ios_base::in);
+	for (int i = 0; i < 5; i++) {
+		string temp;
+		getline(in, temp);
+	}
+	getline(in, line);
+	stringstream tempLine2(line);
+	tempLine2 >> line >> score2;
+	in.close();
+
+	std::fstream out;
+	out.open(totalScore, ios_base::app);
+	out << score1*0.3 + score2*0.7;
+
+	node *SV = dataIn.search(ID);
+	SV->score.push(score1*0.3 + score2*0.7);
+	return;
+}
+
+
 void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID) {
-	//path temp = workingDir / ID;
-	//string IDNameFolder = temp.string();
-	
 	node *numofSub = dataID.search(ID);
 	if (numofSub == NULL) {
 		return;
 	}
-	
-	for (int i = 0; i < numofSub->numberSub; i++) {//run numofSub lan
+
+	//run numofSub times this function
+	for (int i = 0; i < numofSub->numberSub; i++) {
 		string s = "sub" + to_string(i + 1);
 		path build = workingDir / ID / s / "build";
-		if (!exists(build)) {
+		
+		path scoreFile = build / "score.txt";
+		if (!exists(build) || exists(scoreFile)) {
 			return;
 		}
 
@@ -233,6 +320,7 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID) {
 			objFile.push_back(t);
 		}
 
+		//run code per objFile
 		for each (string file in objFile){
 			for (int numTestcase = 1; numTestcase <= 5; numTestcase++) {
 				//copy testcase\input1.txt -> build\input.txt
@@ -261,7 +349,6 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID) {
 			
 		}
 		
-
 		//score output in subx
 		for each (string file in objFile) {
 			for (int numTestcase = 1; numTestcase <= 5; numTestcase++) {
@@ -279,10 +366,10 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID) {
 			}
 		}
 		
+		scoreSub(workingDir, ID, i + 1, dataID);
 	}
 	
 }
-
 
 int main() {
 
@@ -294,10 +381,10 @@ int main() {
 	//check file
 	//thu tu uu tien la flie ID ben trong co file sub dau tien
 	
-	//while (1) {
+	while (1) {
 		checkID(DataID, submitFolder, workingDir);
 		runThenScoreFileSub(workingDir, "1610081", DataID);
-	//}
+	}
 
 	//checkID(DataID, submitFolder, workingDir);
 	//runThenScoreFileSub(workingDir, "1610081", DataID);

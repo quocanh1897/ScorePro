@@ -2,11 +2,15 @@
 #include<string>
 #include<fstream>
 #include<sstream>
+#include<stack>
+
 using namespace std;
+
 enum status { LH = -1, EH, RH };
 struct node {
 	string key ="";
 	int numberSub = 0;
+	stack<float> score;
 	node* left = NULL;
 	node* right = NULL;
 	status balance = EH;
