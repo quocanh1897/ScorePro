@@ -160,12 +160,12 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 	return 1;
 }
 
-void scoreOutput(path workingDir, string ID, string fileToScore, avlTree &dataID, int numTestcase) {
+void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase) {
 	int dem = 0;
 	int a[50];
 	string fileChange = fileToScore.substr(0, fileToScore.find("."));
-	node *numofSub = dataID.search(ID);
-	string s = "sub" + to_string(numofSub->numberSub);
+	//node *numofSub = dataID.search(ID);
+	string s = "sub" + to_string(subNumber);
 	path pathDaFile = workingDir / ID / s / "build" ;
 	string daFile = pathDaFile.string() + "\\outputda" + fileChange + "_" + to_string(numTestcase) + ".txt";
 	// so luong phan tu cua dap an
@@ -273,7 +273,7 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID) {
 				copy_file(daFile, reNameDAFile);
 
 
-				scoreOutput(workingDir, ID, file, dataID, numTestcase);
+				scoreOutput(workingDir, ID, file, i + 1 , numTestcase);
 				remove(reNameDAFile);
 
 			}
