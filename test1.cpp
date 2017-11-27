@@ -297,7 +297,6 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn) {
 	return;
 }
 
-
 void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfSubIn) {
 	node *numofSub = dataID.search(ID);
 	if (numofSub == NULL) {
@@ -335,7 +334,18 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfS
 				string cdDirectory = "pushd " + build.string();
 				string cmdRunFileToScore = cdDirectory + " && " + file;
 
-				system(cmdRunFileToScore.c_str());
+				//while (true) {
+				//	double begin = clock();
+				//	system(cmdRunFileToScore.c_str());
+				//	double deltat = (clock() - begin) / double(CLOCKS_PER_SEC);
+				//	//xay ra loi code chay vo han
+				//	if (deltat > 40) {
+				//		break;
+				//	}
+				//} code xu ly chay vo han ??????
+				
+				
+
 
 				//rename ouput1.txt -> output1_1.txt
 				string outputNum = "output" + fileChange + '_' + to_string(numTestcase) + ".txt";
