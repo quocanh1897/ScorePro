@@ -19,8 +19,8 @@ bool checkID(avlTree &dataID, path submitFolder, path workingDir);
 void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID);
 void compileFile(path FolderWD, string ID, string fileName, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
-void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID);
-
+void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfSubIn);
+void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn);
 
 //------------->>>>  IMPLEMENT <<<<-------------//
 
@@ -146,6 +146,7 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 				if (count > dataID.search(IDNameFolder)->numberSub) {
 					dataID.search(IDNameFolder)->numberSub++;
 					string ID = IDNameFolder;
+					int numOfSub = dataID.search(IDNameFolder)->numberSub;
 					string sub = "sub" + to_string(dataID.search(IDNameFolder)->numberSub);
 					double starttime = clock();
 					//copy den khi nao du file thi thoi nho` vao quantity trong xml
@@ -170,7 +171,7 @@ bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
 					}
 					CompilethroughXML(writable, workingDir, ID, sub);
 					//--------------------------------//
-					//runThenScoreFileSub(workingDir, ID, dataID);
+					runThenScoreFileSub(workingDir, ID, dataID, numOfSub);
 			}
 		}
 	}
@@ -264,7 +265,7 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn) {
 
 	std::fstream in;
 	string line;
-	float score1, score2;
+	float score1 = 0, score2 = 0;
 	//open scoreOf1 to save score of program1
 	in.open(scoreFile1, ios_base::in);
 	for (int i = 0; i < 5; i++) {
@@ -290,14 +291,14 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn) {
 	std::fstream out;
 	out.open(totalScore, ios_base::app);
 	out << score1*0.3 + score2*0.7;
-
+	out.close();
 	node *SV = dataIn.search(ID);
 	SV->score.push(score1*0.3 + score2*0.7);
 	return;
 }
 
 
-void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID) {
+void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfSubIn) {
 	node *numofSub = dataID.search(ID);
 	if (numofSub == NULL) {
 		return;
@@ -310,7 +311,7 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID) {
 		
 		path scoreFile = build / "score.txt";
 		if (!exists(build) || exists(scoreFile)) {
-			return;
+			continue;
 		}
 
 		list<string> objFile;
@@ -383,7 +384,7 @@ int main() {
 	
 	while (1) {
 		checkID(DataID, submitFolder, workingDir);
-		runThenScoreFileSub(workingDir, "1610081", DataID);
+		//runThenScoreFileSub(workingDir, "1610081", DataID);
 	}
 
 	//checkID(DataID, submitFolder, workingDir);
