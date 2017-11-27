@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<source>
+	<quantity>4	</quantity>
+	<xml> pro.xml</xml>
+	<cpp> 1.cpp </cpp>
+	<h> 1.h </h>
+	<cpp> 2.cpp</cpp>
+	
+</source>

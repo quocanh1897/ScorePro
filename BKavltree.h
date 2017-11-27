@@ -3,6 +3,7 @@
 #include<fstream>
 #include<sstream>
 #include<stack>
+#include"BKheap.h"
 
 using namespace std;
 
@@ -10,6 +11,7 @@ enum status { LH = -1, EH, RH };
 struct node {
 	string key ="";
 	int numberSub = 0;
+	//Heap score;
 	stack<float> score;
 	node* left = NULL;
 	node* right = NULL;
