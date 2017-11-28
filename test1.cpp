@@ -6,6 +6,7 @@
 #include <ctime>
 #include<fstream>
 #include<sstream>
+#include<stack>
 
 using namespace boost::filesystem;
 
@@ -15,8 +16,9 @@ bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
 bool Copyfile(path workingDir, path submitFol, string ID, string sub);
 bool CompilethroughXML(const char* link, path workingDir, string ID, string sub);
 bool checkID(avlTree &dataID, path submitFolder, path workingDir);
+bool CreateXML(path submitfolder, string ID, string sub);
 
-void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID);
+void exportScore(path workingDir, avlTree dataIN);
 void compileFile(path FolderWD, string ID, string fileName, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
 void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfSubIn);
@@ -107,6 +109,60 @@ bool Copyfile(path workingDir, path submitFol,string ID,string sub) {
 	return false;
 }
 
+bool CreateXML(path submitfolder, string ID, string sub) {
+
+	//tao file xml
+	path subfile = submitfolder / ID / sub;
+	path exist = subfile / "pro.xml";
+	if (exists(exist)) return 0;
+	TiXmlDocument doc;
+	TiXmlDeclaration *dec = new TiXmlDeclaration("1.0", "utf-8", "");
+	TiXmlElement* root = NULL;
+	doc.LinkEndChild(dec);
+	//root
+	{
+		const char* s0 = ID.c_str();
+		char* temp = new char(ID.length() + 1);
+		memcpy(temp, s0, ID.length() + 1);
+		root = new TiXmlElement(temp);
+		doc.LinkEndChild(root);
+	}
+	int i = 0;
+	//file
+
+	for (directory_iterator file(subfile); file != directory_iterator(); ++file) {
+		string namefile = file->path().filename().string();//lay ra ten ID
+		string str = namefile.substr(namefile.find(".") + 1, namefile.length() - 1);
+		const char* duoi = str.c_str();
+		const char* file_name = namefile.c_str();
+		TiXmlElement* child = new TiXmlElement(duoi);
+		TiXmlText *file_name_text = new TiXmlText(file_name);
+		root->LinkEndChild(child);
+		child->LinkEndChild(file_name_text);
+		i++;
+	}
+	{
+		TiXmlElement* child = new TiXmlElement("xml");
+		TiXmlText *file_name_text = new TiXmlText("pro.xml");
+		root->LinkEndChild(child);
+		child->LinkEndChild(file_name_text);
+	}
+	{
+		TiXmlElement* quantity = new TiXmlElement("quantity");
+		root->LinkEndChild(quantity);
+		TiXmlText *quantity_num = new TiXmlText(to_string(i + 1).c_str());
+		quantity->LinkEndChild(quantity_num);
+	}
+	path xmlfile = subfile / "pro.xml";
+	string link = xmlfile.string();
+	const char* s0 = link.c_str();
+	//char* temp = new char(xmlfile.string().length() + 1);
+	//memcpy(temp, s0, xmlfile.string().length() + 1);
+	doc.SaveFile(s0);
+
+	return 1;
+}
+
 bool CompilethroughXML(const char* link,path workingDir,string ID,string sub) {
 	TiXmlDocument doc(link);
 	if (!doc.LoadFile())
@@ -131,51 +187,50 @@ bool CompilethroughXML(const char* link,path workingDir,string ID,string sub) {
 	return 1;
 }
 
-bool checkID(avlTree &dataID, path submitFolder,path workingDir) {
+bool checkID(avlTree &dataID, path submitFolder, path workingDir) {
 	//duyet tuan tu file submitFolder
 	for (directory_iterator file(submitFolder); file != directory_iterator(); ++file) {
 		string IDNameFolder = file->path().filename().string();//lay ra ten ID
-		//ID bo vao database neu chua co
-		if (!dataID.search(IDNameFolder)) 
-			dataID.AVLInsert(dataID.root, new node(IDNameFolder, 0), dataID.taller);	
+															   //ID bo vao database neu chua co
+		if (!dataID.search(IDNameFolder))
+			dataID.AVLInsert(dataID.root, new node(IDNameFolder, 0), dataID.taller);
 		int count = 0;
+
 		//duyet tuan tu file sub
-		for (directory_iterator filesub(submitFolder/IDNameFolder); filesub != directory_iterator(); ++filesub) {
+		for (directory_iterator filesub(submitFolder / IDNameFolder); 
+			filesub != directory_iterator(); ++filesub) {
 			bool error = false;
 			count++;
-				if (count > dataID.search(IDNameFolder)->numberSub) {
-					dataID.search(IDNameFolder)->numberSub++;
-					string ID = IDNameFolder;
-					int numOfSub = dataID.search(IDNameFolder)->numberSub;
-					string sub = "sub" + to_string(dataID.search(IDNameFolder)->numberSub);
-					double starttime = clock();
-					//copy den khi nao du file thi thoi nho` vao quantity trong xml
-					while (1) {
-						if (Copyfile(workingDir, submitFolder, ID, sub)==true) break;
-						double deltatime = (clock()-starttime)/ double(CLOCKS_PER_SEC);
-						//neu 20s ma khong du file thi xoa het ,and then,ID nay` dua xuong cuoi ,den luot nhung ID tiep theo.
-						if (deltatime > 20) {
-							DeleteSubFolder(dataID,workingDir, ID, sub);
-							error = true;
-							break;
-						}
-					}
-					if (error) break;
-					//-----compile nho file xml-----
-					path xml = workingDir / ID / sub / "pro.xml";
-					string xmlStr = xml.string();
-					char * writable = new char[xmlStr.length() + 1];
-					for (int i = 0; i < xmlStr.length() + 1; i++) {
-						if (i == xmlStr.length()) writable[i] = '\0';
-						else writable[i] = xmlStr[i];
-					}
-					CompilethroughXML(writable, workingDir, ID, sub);
-					//--------------------------------//
-					runThenScoreFileSub(workingDir, ID, dataID, numOfSub);
+			if (count > dataID.search(IDNameFolder)->numberSub) {
+				dataID.search(IDNameFolder)->numberSub++;
+				string ID = IDNameFolder;
+				int numOfSub = dataID.search(IDNameFolder)->numberSub;
+				string sub = "sub" + to_string(dataID.search(IDNameFolder)->numberSub);
+				//double starttime = clock();
+				CreateXML(submitFolder, ID, sub);
+				//copy den khi nao du file thi thoi nho` vao quantity trong xml
+				while (1) {
+					if (Copyfile(workingDir, submitFolder, ID, sub) == true) break;
+				}
+				//if (error) break;
+
+
+				//-----compile nho file xml-----
+				path xml = workingDir / ID / sub / "pro.xml";
+				string xmlStr = xml.string();
+				char * writable = new char[xmlStr.length() + 1];
+				for (int i = 0; i < xmlStr.length() + 1; i++) {
+					if (i == xmlStr.length()) writable[i] = '\0';
+					else writable[i] = xmlStr[i];
+				}
+				CompilethroughXML(writable, workingDir, ID, sub);
+				//--------------------------------//
+
+				runThenScoreFileSub(workingDir, ID, dataID, numOfSub);
 			}
 		}
 	}
-	
+
 	return 1;
 }
 
@@ -255,6 +310,57 @@ void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, 
 	return;
 }
 
+void exportScore(path workingDir, avlTree dataIN) {
+	path listSV = workingDir / "listSV.csv";
+	string pathListSV = listSV.string();
+	std::ofstream myfile;
+
+	/*if (!exists(listSV)) {
+		myfile.open(pathListSV);
+		myfile << "MSSV, So lan nop, Diem cao nhat\n";
+	}
+	else {
+		myfile.open(pathListSV);
+	}
+*/
+	myfile.open(pathListSV);
+	myfile << "MSSV, So lan nop, Diem cao nhat\n";
+
+	if (dataIN.root == NULL) 
+		return;
+	
+	//traverse avlTree data to find all MSSV
+	node *current = dataIN.root;
+	stack<string> tempstack;
+	bool done = 0;
+
+	while (!done)
+	{
+		if (current != NULL){
+			tempstack.push(current->key);
+			current = current->left;
+		}
+		else{
+			if (!tempstack.empty())	{
+				node *t1 = dataIN.search(tempstack.top());
+				current = t1;//node chua MSSV, sub, score
+				tempstack.pop();
+				//process here
+				string cmdTemp = current->key + "," + to_string(current->numberSub) + "," + to_string(current->scoreHeap->getMax()) + "\n" ;
+				myfile << cmdTemp;
+
+
+				/* we have visited the node and its left subtree.
+				Now, it's right subtree's turn */
+				current = current->right;
+			}
+			else
+				done = 1;
+		}
+	} /* end of while */
+	myfile.close();
+}
+
 void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn) {
 	int dem = 0;
 	string s = "sub" + to_string(subNumber);
@@ -292,8 +398,10 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn) {
 	out.open(totalScore, ios_base::app);
 	out << score1*0.3 + score2*0.7;
 	out.close();
+
+	//luu diem vao heap cua rieng tung sinh vien
 	node *SV = dataIn.search(ID);
-	SV->score.push(score1*0.3 + score2*0.7);
+	SV->scoreHeap->heapInsert(score1*0.3 + score2*0.7);
 	return;
 }
 
@@ -334,16 +442,18 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfS
 				string cdDirectory = "pushd " + build.string();
 				string cmdRunFileToScore = cdDirectory + " && " + file;
 
+				system(cmdRunFileToScore.c_str());
+
+				//double begin = clock();
 				//while (true) {
-				//	double begin = clock();
+				//	
 				//	system(cmdRunFileToScore.c_str());
 				//	double deltat = (clock() - begin) / double(CLOCKS_PER_SEC);
 				//	//xay ra loi code chay vo han
 				//	if (deltat > 40) {
 				//		break;
 				//	}
-				//} code xu ly chay vo han ??????
-				
+				//} 
 				
 
 
@@ -394,7 +504,8 @@ int main() {
 	
 	while (1) {
 		checkID(DataID, submitFolder, workingDir);
-		//runThenScoreFileSub(workingDir, "1610081", DataID);
+		exportScore(workingDir, DataID);
+		
 	}
 
 	//checkID(DataID, submitFolder, workingDir);
