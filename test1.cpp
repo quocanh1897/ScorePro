@@ -116,17 +116,12 @@ bool CreateXML(path submitfolder, string ID, string sub) {
 	path exist = subfile / "pro.xml";
 	if (exists(exist)) return 0;
 	TiXmlDocument doc;
-	TiXmlDeclaration *dec = new TiXmlDeclaration("1.0", "utf-8", "");
-	TiXmlElement* root = NULL;
+	TiXmlDeclaration *dec = new TiXmlDeclaration("1.0", "UTF-8", "");
 	doc.LinkEndChild(dec);
 	//root
-	{
-		const char* s0 = ID.c_str();
-		char* temp = new char(ID.length() + 1);
-		memcpy(temp, s0, ID.length() + 1);
-		root = new TiXmlElement(temp);
-		doc.LinkEndChild(root);
-	}
+	TiXmlElement* root = new TiXmlElement("Source");
+	doc.LinkEndChild(root);
+
 	int i = 0;
 	//file
 
@@ -155,10 +150,10 @@ bool CreateXML(path submitfolder, string ID, string sub) {
 	}
 	path xmlfile = subfile / "pro.xml";
 	string link = xmlfile.string();
-	const char* s0 = link.c_str();
+	const char* s1 = link.c_str();
 	//char* temp = new char(xmlfile.string().length() + 1);
 	//memcpy(temp, s0, xmlfile.string().length() + 1);
-	doc.SaveFile(s0);
+	doc.SaveFile(s1);
 
 	return 1;
 }
@@ -227,6 +222,8 @@ bool checkID(avlTree &dataID, path submitFolder, path workingDir) {
 				//--------------------------------//
 
 				runThenScoreFileSub(workingDir, ID, dataID, numOfSub);
+
+				exportScore(workingDir, dataID);
 			}
 		}
 	}
@@ -504,7 +501,7 @@ int main() {
 	
 	while (1) {
 		checkID(DataID, submitFolder, workingDir);
-		exportScore(workingDir, DataID);
+		//exportScore(workingDir, DataID);
 		
 	}
 
