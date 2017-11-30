@@ -1,7 +1,7 @@
 ﻿  test1.cpp
 d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(80): warning C4018: '<': signed/unsigned mismatch
-d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(217): warning C4018: '<': signed/unsigned mismatch
-d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(236): warning C4101: 'a': unreferenced local variable
-d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(401): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(218): warning C4018: '<': signed/unsigned mismatch
+d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(237): warning C4101: 'a': unreferenced local variable
+d:\onedrive - vietscience\ctdl\assignment1\test1.cpp(402): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   testBoostLib.vcxproj -> D:\OneDrive - vietscience\CTDL\Assignment1\Debug\testBoostLib.exe
   testBoostLib.vcxproj -> D:\OneDrive - vietscience\CTDL\Assignment1\Debug\testBoostLib.pdb (Partial PDB)

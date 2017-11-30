@@ -42,7 +42,7 @@ void compileFile(path FolderWD, string ID, string fileName,string sub) {
 	string objName = fileName.substr(0,fileName.find(".")) + ".obj";
 	//tao thu muc build
 	path temp{ FolderWD /ID/sub/ "build" };
-	create_directory(temp);
+	//create_directory(temp);
 	//noi chua file .obj
 	path objPath = temp / objName;
 	//noi chua file .cpp
@@ -159,6 +159,7 @@ bool CreateXML(path submitfolder, string ID, string sub) {
 }
 
 bool CompilethroughXML(const char* link,path workingDir,string ID,string sub) {
+	create_directory(workingDir / ID / sub / "build");
 	TiXmlDocument doc(link);
 	if (!doc.LoadFile())
 	{
