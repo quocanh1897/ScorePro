@@ -6,6 +6,11 @@ using namespace std;
 
 class Heap {//MAX HEAP
 private:
+
+	float* arr;
+	int last = -1; 
+	int maxSize = 0;
+
 	void reheapUp(int childLoc) {
 		if (childLoc > 0) {
 			int parent = (childLoc - 1) / 2;
@@ -16,12 +21,10 @@ private:
 		}
 	};
 
-	void reheapDown(int rootLoc) {//rootLoc: vị trí nút trong arr
+	void reheapDown(int rootLoc) {
 		int leftChild = rootLoc * 2 + 1;
 		int rightChild = rootLoc * 2 + 2;
 		int largeChild;
-		//int lastLoc = rootLoc;
-		int pre = arr[rootLoc];
 		int pos = rootLoc;
 		if (leftChild <= this->last) {
 			if (rightChild <= this->last && arr[rightChild] > arr[leftChild])
@@ -36,20 +39,17 @@ private:
 		}
 	};
 
-	void swap(int &a, int &b) {
-		int temp = a;
+	void swap(float &a, float &b) {
+		float temp = a;
 		a = b;
 		b = temp;
 	}
 
-	int* arr;
-	int last;//chi muc phan tu cuoi cung
-	int maxSize;
-
 public:
 	Heap(int maxsize) {
-		this->arr = new int[maxsize];
+		this->arr = new float[maxsize];
 		this->last = -1;
+		this->maxSize = maxsize;
 	};
 
 	~Heap() {
@@ -57,7 +57,15 @@ public:
 		arr = NULL;
 	};
 
-	void buildHeap(int *arrIn, int arrInSize) {
+
+	float getMax() {
+		if (this->isEmpty()) {
+			return -111111;
+		}
+		return this->arr[0];
+	}
+
+	void buildHeap(float *arrIn, int arrInSize) {
 		this->arr = arrIn;
 		int walker = 1;
 		while (walker < arrInSize) {
@@ -67,16 +75,23 @@ public:
 		this->last = arrInSize - 1;
 	};
 
-	bool heapInsert(int dataIn) {
+	bool heapInsert(float dataIn) {
+		/*if (this->isEmpty()) {
+			this->arr[0] = dataIn;
+			this->last = 0;
+		}*/
 		if (this->isFull())
 			return false;
-		this->last++;
-		arr[this->last] = dataIn;
-		reheapUp(this->last);
-		return true;
+		else {
+			this->last++;
+			arr[this->last] = dataIn;
+			reheapUp(this->last);
+			return true;
+		}
+
 	};
 
-	bool heapDelete(int &dataOut) {
+	bool heapDelete(float &dataOut) {
 		if (this->isEmpty())
 			return false;
 		dataOut = this->arr[0];
@@ -90,7 +105,7 @@ public:
 
 	bool isFull() { return last + 1 == maxSize; };
 
-	bool isEmpty() { return last == 0; };
+	bool isEmpty() { return last == -1; };
 
 	void print(int rootLoc, int level) {
 		for (int i = rootLoc; i < this->last + 1; i++) {

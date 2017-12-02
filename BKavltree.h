@@ -11,7 +11,8 @@ enum status { LH = -1, EH, RH };
 struct node {
 	string key ="";
 	int numberSub = 0;
-	//Heap score;
+	bool isLoading = 0;
+	Heap *scoreHeap = new Heap(50);
 	stack<float> score;
 	node* left = NULL;
 	node* right = NULL;
@@ -294,6 +295,10 @@ public:
 			if (current == NULL) return NULL;
 		}
 		return current;
+	}
+	bool is_empty() { 
+		if (root) return 0;
+		else return 1;
 	}
 };
 bool operator >(string a, string b) {
