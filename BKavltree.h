@@ -11,6 +11,7 @@ enum status { LH = -1, EH, RH };
 struct node {
 	string key ="";
 	int numberSub = 0;
+	bool isLoading = 0;
 	Heap *scoreHeap = new Heap(50);
 	stack<float> score;
 	node* left = NULL;
