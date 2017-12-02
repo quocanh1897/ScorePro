@@ -296,6 +296,10 @@ public:
 		}
 		return current;
 	}
+	bool is_empty() { 
+		if (root) return 0;
+		else return 1;
+	}
 };
 bool operator >(string a, string b) {
 	if (a.compare(b) > 0) return true;

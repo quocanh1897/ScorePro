@@ -14,6 +14,7 @@ using namespace boost::filesystem;
 
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
 bool CopyfileStoW(path workingDir, path submitFol, string ID, string sub);
+<<<<<<< HEAD
 bool checkID(avlTree &dataID, path submitFolder, path workingDir);
 bool CreateXML(path submitfolder, string ID, string sub);
 
@@ -22,6 +23,16 @@ int compileFile(path FolderWD, string ID, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
 void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfSubIn,int count);
 void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn);
+=======
+bool checkID(avlTree* dataID, path submitFolder, path workingDir);
+bool CreateXML(path submitfolder, string ID, string sub);
+
+void exportScore(path workingDir, avlTree* dataIN);
+int compileFile(path FolderWD, string ID, string sub);
+void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
+void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count);
+void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn);
+>>>>>>> TrungTin
 
 //------------->>>>  IMPLEMENT <<<<-------------//
 
@@ -211,22 +222,34 @@ bool CreateXML(path submitfolder, string ID, string sub) {
 
 	return 1;
 }
+<<<<<<< HEAD
 bool checkID(avlTree &dataID, path submitFolder, path workingDir) {
+=======
+bool checkID(avlTree* dataID, path submitFolder, path workingDir) {
+>>>>>>> TrungTin
 	//duyet tuan tu file submitFolder
 	for (directory_iterator file(submitFolder); file != directory_iterator(); ++file) {
 		string IDNameFolder = file->path().filename().string();//lay ra ten ID
 				
 															//ID bo vao database neu chua co
+<<<<<<< HEAD
 		node* IDNode = dataID.search(IDNameFolder);
 		int count = 0;
 		if (!IDNode)
 			dataID.AVLInsert(dataID.root, IDNode=new node(IDNameFolder, 0), dataID.taller);
+=======
+		node* IDNode = dataID->search(IDNameFolder);	
+		int count = 0;
+		if (!IDNode)
+			dataID->AVLInsert(dataID->root, IDNode = new node(file->path().filename().string(), 0), dataID->taller);
+>>>>>>> TrungTin
 		//duyet tuan tu file sub
 		for (directory_iterator filesub(submitFolder / IDNameFolder); filesub != directory_iterator(); ++filesub) {
 			//bool error = false;
 			
 			//kiem tra xem co phai la folder k
 			if (!is_directory(filesub->path())) continue;
+<<<<<<< HEAD
 			if (IDNode->isLoading) break;
 			//dem bao nhieu file sub
 			count++;
@@ -237,6 +260,20 @@ bool checkID(avlTree &dataID, path submitFolder, path workingDir) {
 				string sub = "sub" + to_string(dataID.search(IDNameFolder)->numberSub);
 				//double starttime = clock();
 				//CreateXML(submitFolder, ID, sub);
+=======
+
+			//dem bao nhieu file sub
+			count++;
+			if (count > dataID->search(IDNameFolder)->numberSub) {
+				if (IDNode->isLoading) break;//neu fileID dang load thi di ra ngoai
+				dataID->search(IDNameFolder)->numberSub++;
+				string ID = IDNameFolder;
+				int numOfSub = dataID->search(IDNameFolder)->numberSub;
+				string sub = "sub" + to_string(dataID->search(IDNameFolder)->numberSub);
+				//double starttime = clock();
+				//CreateXML(submitFolder, ID, sub);
+				
+>>>>>>> TrungTin
 				//copy den khi nao du file thi thoi nho` vao quantity trong xml
 				while (1) {
 					if (CopyfileStoW(workingDir, submitFolder, ID, sub) == true) break;
@@ -260,7 +297,7 @@ void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, 
 	int dem = 0;
 	int a[50];
 	string fileChange = fileToScore.substr(0, fileToScore.find("."));
-	//node *numofSub = dataID.search(ID);
+	//node *numofSub = dataID->search(ID);
 	string s = "sub" + to_string(subNumber);
 	path pathDaFile = workingDir / ID / s / "build" ;
 	string daFile = pathDaFile.string() + "\\outputda" + fileChange + "_" + to_string(numTestcase) + ".txt";
@@ -332,18 +369,30 @@ void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, 
 	return;
 }
 
+<<<<<<< HEAD
 void exportScore(path workingDir, avlTree dataIN) {
+=======
+void exportScore(path workingDir, avlTree* dataIN) {
+>>>>>>> TrungTin
 	path listSV = workingDir / "listSV.csv";
 	string pathListSV = listSV.string();
 	std::ofstream myfile;
 	myfile.open(pathListSV);
 	myfile << "MSSV, So lan nop, Diem cao nhat\n";
 
+<<<<<<< HEAD
 	if (dataIN.root == NULL) 
 		return;
 	
 	//traverse avlTree data to find all MSSV
 	node *current = dataIN.root;
+=======
+	if (dataIN->root == NULL) 
+		return;
+	
+	//traverse avlTree data to find all MSSV
+	node *current = dataIN->root;
+>>>>>>> TrungTin
 	stack<string> tempstack;
 	bool done = 0;
 
@@ -355,7 +404,11 @@ void exportScore(path workingDir, avlTree dataIN) {
 		}
 		else{
 			if (!tempstack.empty())	{
+<<<<<<< HEAD
 				node *t1 = dataIN.search(tempstack.top());
+=======
+				node *t1 = dataIN->search(tempstack.top());
+>>>>>>> TrungTin
 				current = t1;//node chua MSSV, sub, score
 				tempstack.pop();
 				//process here
@@ -374,7 +427,11 @@ void exportScore(path workingDir, avlTree dataIN) {
 	myfile.close();
 }
 
+<<<<<<< HEAD
 void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn) {
+=======
+void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
+>>>>>>> TrungTin
 	int dem = 0;
 	string s = "sub" + to_string(subNumber);
 	path pathDaFile = workingDir / ID / s / "build";
@@ -413,13 +470,22 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree &dataIn) {
 	out.close();
 
 	//luu diem vao heap cua rieng tung sinh vien
+<<<<<<< HEAD
 	node *SV = dataIn.search(ID);
+=======
+	node *SV = dataIn->search(ID);
+>>>>>>> TrungTin
 	SV->scoreHeap->heapInsert(score1*0.3 + score2*0.7);
 	return;
 }
 
+<<<<<<< HEAD
 void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfSubIn,int count) {
 	node *numofSub = dataID.search(ID);
+=======
+void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count) {
+	node *numofSub = dataID->search(ID);
+>>>>>>> TrungTin
 	if (numofSub == NULL) {
 		return;
 	}
@@ -474,12 +540,20 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree &dataID, int numOfS
 	}
 
 }
+<<<<<<< HEAD
 void ThreadCompile(avlTree DataID, path submitFolder, path workingDir) {
+=======
+void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir) {
+>>>>>>> TrungTin
 	while (1) {
 		checkID(DataID, submitFolder, workingDir);
 	}
 }
+<<<<<<< HEAD
 void PrepareCompile(avlTree DataID,path submitFolder) {
+=======
+void PrepareCompile(avlTree* DataID,path submitFolder) {
+>>>>>>> TrungTin
 	for (directory_iterator fileID(submitFolder); fileID != directory_iterator(); ++fileID) {
 		//dem co bao nhieu sub
 		int count = 0;
@@ -491,9 +565,16 @@ void PrepareCompile(avlTree DataID,path submitFolder) {
 		}
 		//neu khong can tao folder thi continue
 		if (!CanCreateSub) continue;
+<<<<<<< HEAD
 		node* IDNode = DataID.search(fileID->path().filename().string());
 		if (!IDNode)
 			DataID.AVLInsert(DataID.root, IDNode=new node(fileID->path().filename().string(), 0), DataID.taller);
+=======
+		node* IDNode = DataID->search(fileID->path().filename().string());
+		
+		if (!IDNode)
+			DataID->AVLInsert(DataID->root, IDNode=new node(fileID->path().filename().string(), 0), DataID->taller);
+>>>>>>> TrungTin
 		IDNode->isLoading = true;
 		//tao sub moi
 		path newsub = fileID->path() / ("sub" + to_string(count + 1)).c_str();
@@ -504,7 +585,11 @@ void PrepareCompile(avlTree DataID,path submitFolder) {
 		IDNode->isLoading = false;
 	}
 }
+<<<<<<< HEAD
 void ThreadPrepareCompile(avlTree& DataID,path submitFolder) {
+=======
+void ThreadPrepareCompile(avlTree* DataID,path submitFolder) {
+>>>>>>> TrungTin
 	while (1) {
 		PrepareCompile(DataID,submitFolder);
 	}
@@ -515,7 +600,11 @@ int main() {
 	path workingDir("D:\\workingDir");
 	path submitFolder("D:\\submitFolder");
 	//data base
+<<<<<<< HEAD
 	avlTree DataID;
+=======
+	avlTree* DataID=new avlTree();
+>>>>>>> TrungTin
 
 	thread t1(ThreadCompile, DataID, submitFolder, workingDir);
 	thread t2(ThreadPrepareCompile, DataID,submitFolder);
