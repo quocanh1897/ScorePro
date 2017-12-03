@@ -18,7 +18,12 @@ struct node {
 	node* right = NULL;
 	status balance = EH;
 	node(string name, int value) { key = name; numberSub = value; }
+	node(string name, int val, float s) { key = name, numberSub = val, scoreHeap->heapInsert(s); }
 };
+node* newNode(string namein, int numbersub, float score) {
+	node *res = new node(namein, numbersub, score);
+	return res;
+}
 node* rotateRight(node* & root) {
 	node* tempPtr = root->left;
 	root->left = tempPtr->right;
@@ -299,6 +304,42 @@ public:
 	bool is_empty() { 
 		if (root) return 0;
 		else return 1;
+	}
+
+	void saveAVL(node *p, std::ofstream &out) {
+		if (!p) {
+			out << "#" << endl;
+			//fprintf_s(out, "%s ", "#");
+			return;
+		}
+		else {
+			//fprintf_s(out, "%s*%d*%f", p->key, p->numberSub, p->scoreHeap->getMax());
+			out << p->key << "*" << p->numberSub << "*" << p->scoreHeap->getMax() << endl;
+			saveAVL(p->left, out);
+			saveAVL(p->right, out);
+		}
+	}
+
+	void loadAVL(node *&p, std::ifstream &fin) {
+		string val;
+
+		if (!getline(fin, val) || val == "#")
+			return;
+		int star1 = val.find("*");
+		int star2 = star1 + val.substr(star1 + 1, val.length() - 1).find("*");
+		string id = val.substr(0, star1);
+		string numsub = val.substr(star1 + 1, star2);
+		string score = val.substr(star2 + 2, val.length() - 1);
+
+		stringstream temp(numsub);
+		int num;
+		temp >> num;
+		stringstream temp2(score);
+		float scoref;
+		temp2 >> scoref;
+		p = newNode(id, num, scoref);
+		loadAVL(p->left, fin);
+		loadAVL(p->right, fin);
 	}
 };
 bool operator >(string a, string b) {

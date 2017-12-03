@@ -113,6 +113,7 @@ bool CopyfileStoW(path workingDir, path submitFol,string ID,string sub) {
 	}
 	return false;
 }
+
 bool Replacefile(path IDFolder, string newsub) {
 	bool flag = false;//da tim thay quantity chua
 	int quantity = 0;//so luong file
@@ -167,6 +168,7 @@ bool Replacefile(path IDFolder, string newsub) {
 	if (isAllDir) return true;
 	return false;
 }
+
 bool CreateXML(path submitfolder, string ID, string sub) {
 
 	//tao file xml
@@ -385,7 +387,6 @@ void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, 
 	return;
 }
 
-
 void exportScore(path workingDir, avlTree* dataIN) {
 
 	path listSV = workingDir / "listSV.csv";
@@ -433,8 +434,11 @@ void exportScore(path workingDir, avlTree* dataIN) {
 		}
 	} /* end of while */
 	myfile.close();
-}
 
+	std::ofstream outTree("avl.dat");
+	dataIN->saveAVL(dataIN->root, outTree);
+	outTree.close();
+}
  
 void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
  
@@ -483,7 +487,6 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
 	return;
 }
 
- 
 void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count) {
 	node *numofSub = dataID->search(ID);
  
@@ -585,22 +588,49 @@ void ThreadPrepareCompile(avlTree* DataID,path submitFolder) {
 		PrepareCompile(DataID,submitFolder);
 	}
 }
+
+void settingConfig(path &SF, path &WD, path &uploadedFolder) {
+	std::ifstream ifs("settings.config");
+	string line, sf, wd, uploaded;
+
+	getline(ifs, line);
+	sf = line.substr(line.find("\"") + 1, line.find("\"") );
+	path t(sf);
+	SF = t;
+
+	getline(ifs, line);
+	wd = line.substr(line.find("\"") + 1, line.length());
+	wd.erase(wd.find("\""), 1);
+	path t2(wd);
+	WD = t2;
+
+	getline(ifs, line);
+	uploaded = line.substr(line.find("\"") + 1, line.length() - 1);
+	uploaded.erase(uploaded.find("\""),1);
+	path t3(uploaded);
+	uploadedFolder = t3;
+}
+
+
+
 int main() {
 
-	//path lam vc
-	path workingDir("D:\\workingDir");
-	path submitFolder("D:\\submitFolder");
-	//data base
- 
-	avlTree* DataID=new avlTree();
- 
+	path submitFolder, workingDir, uploadedFolder;
 
+	settingConfig(submitFolder, workingDir, uploadedFolder);
+	
+	avlTree* DataID=new avlTree();
+	DataID->root = NULL;
+	std::ifstream inTree("avl.dat");
+	DataID->loadAVL(DataID->root, inTree);
+	inTree.close();
 	thread t1(ThreadCompile, DataID, submitFolder, workingDir);
-	thread t2(ThreadPrepareCompile, DataID,submitFolder);
+	thread t2(ThreadPrepareCompile, DataID, submitFolder);
 	t1.join();
 	t2.join();
 	//while(1) {
 		//PrepareCompile(submitFolder);
 	//}
+	
 	system("pause");
 }
