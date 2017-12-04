@@ -9,6 +9,7 @@
 #include<stack>
 #include<algorithm>
 #include<thread>
+#include <boost/date_time.hpp>
 
 using namespace boost::filesystem;
 struct Checker {
@@ -21,7 +22,7 @@ struct Checker {
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
 bool CopyfileStoW(path workingDir, path submitFol, string ID, string sub);
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe);
+bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe,Heap* Priority);
 bool CreateXML(path submitfolder, string ID, string sub);
 
 void exportScore(path workingDir, avlTree* dataIN, string ID);
@@ -29,7 +30,7 @@ int compileFile(path FolderWD, string ID, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
 void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe);
 void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn);
-
+void AddPriority(Heap* Priority, string gettime, string ID);
 
 //------------->>>>  IMPLEMENT <<<<-------------//
 
@@ -118,7 +119,8 @@ bool CopyfileStoW(path workingDir, path submitFol,string ID,string sub) {
 	return false;
 }
 
-bool Replacefile(path IDFolder, string newsub) {
+bool Replacefile(path IDFolder, string newsub,Heap* Priority) {
+	string gettime;
 	bool flag = false;//da tim thay quantity chua
 	int quantity = 0;//so luong file
 	int count = 0;//dem
@@ -155,8 +157,15 @@ bool Replacefile(path IDFolder, string newsub) {
 			TiXmlElement* root = doc.RootElement();
 			TiXmlElement* child1 = root->FirstChildElement();
 			while (child1) {
-				string temp = "quantity";
-				if (!temp.compare(child1->ValueTStr().c_str()))
+				string quan = "quantity";
+				string time = "time";
+				if (!time.compare(child1->ValueTStr().c_str()))
+				{
+					gettime =child1->GetText();
+					AddPriority(Priority,gettime, IDFolder.filename().string());
+					
+				}
+				if (!quan.compare(child1->ValueTStr().c_str()))
 				{
 					quantity = atoi(child1->GetText());
 					flag = true;
@@ -171,6 +180,37 @@ bool Replacefile(path IDFolder, string newsub) {
 	}
 	if (isAllDir) return true;
 	return false;
+}
+void ReadXML(path IDFolder, string sub, Heap* Priority) {
+	string gettime;
+	string curFileName = "pro.xml";
+	path desFileName = IDFolder / sub/curFileName;
+	//chuyen string ve char* de dung ham doc
+	char * writable = new char[desFileName.string().size() + 1];
+	for (int i = 0; i < desFileName.string().length() + 1; i++) {
+		if (i == desFileName.string().length())
+			writable[i] = '\0';
+		else
+			writable[i] = desFileName.string()[i];
+
+	}
+	TiXmlDocument doc(writable);
+	if (!doc.LoadFile())
+		{
+		//printf("%s", doc.ErrorDesc());
+		return;
+		}
+	TiXmlElement* root = doc.RootElement();
+	TiXmlElement* child1 = root->FirstChildElement();
+	while (child1) {
+		string time = "time";
+		if (!time.compare(child1->ValueTStr().c_str()))
+			{
+				gettime = child1->GetText();
+				AddPriority(Priority, gettime, IDFolder.filename().string());
+			}
+		child1 = child1->NextSiblingElement();
+	}
 }
 
 bool CreateXML(path submitfolder, string ID, string sub) {
@@ -222,57 +262,37 @@ bool CreateXML(path submitfolder, string ID, string sub) {
 	return 1;
 }
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe) {
+bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority) {
 
 	//duyet tuan tu file submitFolder
-	for (directory_iterator file(submitFolder); file != directory_iterator(); ++file) {
-		string IDNameFolder = file->path().filename().string();//lay ra ten ID
-				
-															//ID bo vao database neu chua co
+		if (Priority->isEmpty()) return 0;
+		nodeHeap temp;
+		Priority->heapDelete(temp);
+		string IDNameFolder = temp.ID;//lay ra ten ID														//ID bo vao database neu chua co
 		node* IDNode = dataID->search(IDNameFolder);	
-		int count = 0;
+		int count = 1;
 		if (!IDNode)
-			dataID->AVLInsert(dataID->root, IDNode = new node(file->path().filename().string(), 0), dataID->taller);
-
+			return 0;
 		//duyet tuan tu file sub
-		for (directory_iterator filesub(submitFolder / IDNameFolder); filesub != directory_iterator(); ++filesub) {
-			//bool error = false;
-			
-			//kiem tra xem co phai la folder k
-			if (!is_directory(filesub->path())) continue;
-
-
-			//dem bao nhieu file sub
-			count++;
-			if (count > dataID->search(IDNameFolder)->numberSub) {
-				if (IDNode->isLoading) break;//neu fileID dang load thi di ra ngoai
-				dataID->search(IDNameFolder)->numberSub++;
+		path IDfolder = workingDir / IDNameFolder;
+		if (!exists(IDfolder)) {}
+		else {
+			for (directory_iterator file(IDfolder); file != directory_iterator(); ++file) 
+				count++;
+		}
+				if (IDNode->isLoading) return 0;//neu fileID dang load thi di ra ngoai
 				string ID = IDNameFolder;
-				int numOfSub = dataID->search(IDNameFolder)->numberSub;
-				string sub = "sub" + to_string(dataID->search(IDNameFolder)->numberSub);
-				//double starttime = clock();
-				//CreateXML(submitFolder, ID, sub);
-				
-
+				int numOfSub = count;
+				string sub = "sub" + to_string(count);
 				//copy den khi nao du file thi thoi nho` vao quantity trong xml
 				while (1) {
 					if (CopyfileStoW(workingDir, submitFolder, ID, sub) == true) break;
 				}
-				//if (error) break;
 				if (exists(workingDir / ID / sub / "build")) return 0;
-				int count=compileFile(workingDir, ID, sub);
+				int countTest=compileFile(workingDir, ID, sub);
 				//--------------------------------//
-
-				runThenScoreFileSub(workingDir, ID, dataID, numOfSub, count, checkErrorExe);
-
-				//exportScore(workingDir, dataID, ID);
-
-
-			}
-		}
-	}
-
-	return 1;
+				runThenScoreFileSub(workingDir, ID, dataID, numOfSub, countTest, checkErrorExe);
+				return 1;
 }
 
 void reFormatTxt(string pathFile) {
@@ -523,7 +543,7 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
 	node *SV = dataIn->search(ID);
  
 	SV->scoreStack.push(score1*0.3 + score2*0.7);
-	SV->scoreHeap->heapInsert(score1*0.3 + score2*0.7);
+	SV->scoreHeap->heapInsert(nodeHeap(score1*0.3 + score2*0.7));
 
 	exportScore(workingDir, dataIn, ID);
 	return;
@@ -601,47 +621,54 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 
 }
  
-void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* checkErrorExe) {
+void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority) {
  
 	while (1) {
-		checkID(DataID, submitFolder, workingDir, checkErrorExe);
+		checkID(DataID, submitFolder, workingDir, checkErrorExe,Priority);
 	}
 }
  
-void PrepareCompile(avlTree* DataID,path submitFolder) {
+void PrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
  
 	for (directory_iterator fileID(submitFolder); fileID != directory_iterator(); ++fileID) {
+		node* IDNode = DataID->search(fileID->path().filename().string());
+		if (!IDNode)
+			DataID->AVLInsert(DataID->root, IDNode = new node(fileID->path().filename().string(), 0), DataID->taller);
 		//dem co bao nhieu sub
 		int count = 0;
 		//co su thay doi gi khong-> co can sinh file khong
 		bool CanCreateSub = 0;
 		for (directory_iterator file(fileID->path()); file != directory_iterator(); ++file) {
-			if (is_directory(file->path())) count++;
+			if (is_directory(file->path())) { 
+				count++;
+				if (count > IDNode->numberSub) {
+					ReadXML(fileID->path(), file->path().filename().string(), Priority);
+					IDNode->numberSub++;
+				}
+			}
 			else CanCreateSub = 1;
 		}
 		//neu khong can tao folder thi continue
 		if (!CanCreateSub) continue;
  
-		node* IDNode = DataID->search(fileID->path().filename().string());
 		
-		if (!IDNode)
-			DataID->AVLInsert(DataID->root, IDNode=new node(fileID->path().filename().string(), 0), DataID->taller);
  
 		IDNode->isLoading = true;
 		//tao sub moi
 		path newsub = fileID->path() / ("sub" + to_string(count + 1)).c_str();
 		create_directory(newsub);
 		while (1) {
-			if (Replacefile(fileID->path(), newsub.string())) break;
+			if (Replacefile(fileID->path(), newsub.string(),Priority)) break;
 		}
+		IDNode->numberSub++;
 		IDNode->isLoading = false;
 	}
 }
  
-void ThreadPrepareCompile(avlTree* DataID,path submitFolder) {
+void ThreadPrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
  
 	while (1) {
-		PrepareCompile(DataID,submitFolder);
+		PrepareCompile(DataID,submitFolder,Priority);
 	}
 }
 
@@ -704,26 +731,36 @@ void ThreadCheckErrorExe(Checker* ErrorExe) {
 		checkErrorExe(ErrorExe);
 	}
 }
-
+void AddPriority(Heap* Priority, string gettime, string ID) {
+	stringstream sstr;
+	sstr << gettime;
+	boost::posix_time::ptime timeLocal = boost::posix_time::second_clock::local_time();
+	int month, day, hour, min, second;
+	char a[4];
+	sstr >> month >> a[0] >> day >> a[1] >> hour >> a[2] >> min >> a[3] >> second;
+	//create key priority
+	double timevalue = (timeLocal.date().month().as_enum() - month) * 44640 + (timeLocal.date().day() - day) * 1400 + (timeLocal.time_of_day().hours() - hour) * 60 + (timeLocal.time_of_day().minutes() - min) + (timeLocal.time_of_day().seconds() - second) / (double)60;
+	int heso = atoi(ID.c_str())/100000;
+	double key = timevalue*heso;
+	Priority->heapInsert(nodeHeap(key, ID));
+}
 int main() {
 	Checker* checkErrorExe = new Checker();
 	path submitFolder, workingDir, uploadedFolder;
 	settingConfig(submitFolder, workingDir, uploadedFolder);
-	
+	Heap* Priority = new Heap(1000);
 	avlTree* DataID=new avlTree();
 	DataID->root = NULL;
 	std::ifstream inTree("avl.dat");
 	DataID->loadAVL(DataID->root, inTree);
 	inTree.close();
-	thread t1(ThreadCompile, DataID, submitFolder, workingDir,checkErrorExe);
-	thread t2(ThreadPrepareCompile, DataID, submitFolder);
+	thread t2(ThreadCompile, DataID, submitFolder, workingDir,checkErrorExe,Priority);
+	thread t1(ThreadPrepareCompile, DataID, submitFolder,Priority);
 	thread t3(ThreadCheckErrorExe,checkErrorExe);
 	t1.join();
 	t2.join();
 	t3.join();
-	//while(1) {
-		//PrepareCompile(submitFolder);
-	//}
-	
-	system("pause");
+	//
+	//std::cout << "Current System Time = " << (double) << std::endl;
+	//system("pause");
 }

@@ -3,18 +3,24 @@
 #include <iostream>
 
 using namespace std;
-
+struct nodeHeap {
+	nodeHeap(){}
+	nodeHeap(float value) { key = value; }
+	nodeHeap(float value, string stringID) { key = value; ID = stringID; }
+	float key = 0;
+	string ID = "";
+};
 class Heap {//MAX HEAP
-private:
+public:
 
-	float* arr;
+	nodeHeap* arr=NULL;
 	int last = -1; 
 	int maxSize = 0;
 
 	void reheapUp(int childLoc) {
 		if (childLoc > 0) {
 			int parent = (childLoc - 1) / 2;
-			if (arr[childLoc] > arr[parent]) {
+			if (arr[childLoc].key > arr[parent].key) {
 				swap(arr[childLoc], arr[parent]);
 				reheapUp(parent);
 			}
@@ -27,27 +33,25 @@ private:
 		int largeChild;
 		int pos = rootLoc;
 		if (leftChild <= this->last) {
-			if (rightChild <= this->last && arr[rightChild] > arr[leftChild])
+			if (rightChild <= this->last && arr[rightChild].key > arr[leftChild].key)
 				largeChild = rightChild;
 			else
 				largeChild = leftChild;
 
-			if (arr[largeChild] > arr[pos]) {
+			if (arr[largeChild].key > arr[pos].key) {
 				swap(arr[largeChild], arr[pos]);
 				reheapDown(largeChild);
 			}
 		}
 	};
 
-	void swap(float &a, float &b) {
-		float temp = a;
-		a = b;
-		b = temp;
-	}
-
-public:
+	//void swap(float &a, float &b) {
+	//	float temp = a;
+	//	a = b;
+	//	b = temp;
+	//}
 	Heap(int maxsize) {
-		this->arr = new float[maxsize];
+		arr = new nodeHeap[maxsize]();
 		this->last = -1;
 		this->maxSize = maxsize;
 	};
@@ -62,10 +66,10 @@ public:
 		if (this->isEmpty()) {
 			return -111111;
 		}
-		return this->arr[0];
+		return this->arr[0].key;
 	}
 
-	void buildHeap(float *arrIn, int arrInSize) {
+	void buildHeap(nodeHeap *arrIn, int arrInSize) {
 		this->arr = arrIn;
 		int walker = 1;
 		while (walker < arrInSize) {
@@ -75,7 +79,7 @@ public:
 		this->last = arrInSize - 1;
 	};
 
-	bool heapInsert(float dataIn) {
+	bool heapInsert(nodeHeap dataIn) {
 		/*if (this->isEmpty()) {
 			this->arr[0] = dataIn;
 			this->last = 0;
@@ -91,7 +95,7 @@ public:
 
 	};
 
-	bool heapDelete(float &dataOut) {
+	bool heapDelete(nodeHeap &dataOut) {
 		if (this->isEmpty())
 			return false;
 		dataOut = this->arr[0];
@@ -109,7 +113,7 @@ public:
 
 	void print(int rootLoc, int level) {
 		for (int i = rootLoc; i < this->last + 1; i++) {
-			cout << this->arr[i] << "__";
+			cout << this->arr[i].key << "__";
 		}
 		cout << endl;
 	};
