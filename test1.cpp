@@ -265,7 +265,7 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 
 				runThenScoreFileSub(workingDir, ID, dataID, numOfSub, count, checkErrorExe);
 
-				exportScore(workingDir, dataID, ID);
+				//exportScore(workingDir, dataID, ID);
 
 
 			}
@@ -408,6 +408,7 @@ void exportScore(path workingDir, avlTree* dataIN, string ID) {
 	if (!exists(listAllSubSV)) {
 		myfileAS.open(pathListAllSubSV);
 		myfileAS << "MSSV, Lan nop, Diem\n";
+		myfileAS.close();
 	}
 	myfileAS.open(pathListAllSubSV, ios_base::app);
 	node *sv = dataIN->search(ID);
@@ -495,17 +496,36 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
 	tempLine2 >> line >> score2;
 	in.close();
 
+	//doc setting thang diem o file config
+	std::ifstream ifs("settings.config");
+	string l;
+	getline(ifs, l); getline(ifs, l); getline(ifs, l); getline(ifs, l); getline(ifs, l);
+	int star1 = l.find("\"");
+	int star2 = l.find("%");
+	string ll = l.substr(l.find("+"), l.length() - 1);
+	int star3 = ll.find("\"");
+	int star4 = ll.find("%");
+	string t1 = l.substr(star1 + 1, star2-star1-1);
+	string t2 = ll.substr(star3 + 1, star4-star3-1);
+	stringstream ss(t1);
+	float a = 100, b = 0;
+	ss >> a;
+	stringstream ss2(t2);
+	ss2 >> b;
+
 	std::fstream out;
 	out.open(totalScore, ios_base::app);
-	out << score1*0.3 + score2*0.7;
+	out << score1*a/100 + score2*b/100;
 	out.close();
 
-	//luu diem vao heap cua rieng tung sinh vien
+	//luu diem vao heap & stack cua rieng tung sinh vien
  
 	node *SV = dataIn->search(ID);
  
 	SV->scoreStack.push(score1*0.3 + score2*0.7);
 	SV->scoreHeap->heapInsert(score1*0.3 + score2*0.7);
+
+	exportScore(workingDir, dataIn, ID);
 	return;
 }
 
@@ -672,7 +692,9 @@ void checkErrorExe(Checker* checkErrorExe) {
 			*(checkErrorExe->signal) = true;
 			string cmd = "pushd C:\\Windows\\System32 && Taskkill /F /IM " + *(checkErrorExe->nameExe) + ".exe";
 			system(cmd.c_str());
-			break; }
+
+			break; 
+		}
 	}
 	*(checkErrorExe->nameExe) = "";
 	*(checkErrorExe->startRun) = false;
