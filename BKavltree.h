@@ -13,12 +13,12 @@ struct node {
 	int numberSub = 0;
 	bool isLoading = 0;
 	Heap *scoreHeap = new Heap(50);
-	stack<float> score;
+	stack<float> scoreStack;
 	node* left = NULL;
 	node* right = NULL;
 	status balance = EH;
 	node(string name, int value) { key = name; numberSub = value; }
-	node(string name, int val, float s) { key = name, numberSub = val, scoreHeap->heapInsert(s); }
+	node(string name, int val, float s) { key = name, numberSub = val, scoreStack.push(s); }
 };
 node* newNode(string namein, int numbersub, float score) {
 	node *res = new node(namein, numbersub, score);
@@ -314,7 +314,7 @@ public:
 		}
 		else {
 			//fprintf_s(out, "%s*%d*%f", p->key, p->numberSub, p->scoreHeap->getMax());
-			out << p->key << "*" << p->numberSub << "*" << p->scoreHeap->getMax() << endl;
+			out << p->key << "*" << p->numberSub << "*" << p->scoreStack.top() << endl;
 			saveAVL(p->left, out);
 			saveAVL(p->right, out);
 		}

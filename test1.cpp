@@ -24,7 +24,7 @@ bool CopyfileStoW(path workingDir, path submitFol, string ID, string sub);
 bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe);
 bool CreateXML(path submitfolder, string ID, string sub);
 
-void exportScore(path workingDir, avlTree* dataIN);
+void exportScore(path workingDir, avlTree* dataIN, string ID);
 int compileFile(path FolderWD, string ID, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
 void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe);
@@ -265,7 +265,9 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 
 				runThenScoreFileSub(workingDir, ID, dataID, numOfSub, count, checkErrorExe);
 
-				exportScore(workingDir, dataID);
+				exportScore(workingDir, dataID, ID);
+
+
 			}
 		}
 	}
@@ -391,17 +393,31 @@ void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, 
 	return;
 }
 
-void exportScore(path workingDir, avlTree* dataIN) {
+void exportScore(path workingDir, avlTree* dataIN, string ID) {
+	if (dataIN->root == NULL)
+		return;
 
 	path listSV = workingDir / "listSV.csv";
+	path listAllSubSV = workingDir / "listAllSubSV.csv";
 	string pathListSV = listSV.string();
+	string pathListAllSubSV = listAllSubSV.string(); 
 	std::ofstream myfile;
+	std::ofstream myfileAS;
+	
+	//<-----print to listAllSubSV.csv all of subs ----->//
+	if (!exists(listAllSubSV)) {
+		myfileAS.open(pathListAllSubSV);
+		myfileAS << "MSSV, Lan nop, Diem\n";
+	}
+	myfileAS.open(pathListAllSubSV, ios_base::app);
+	node *sv = dataIN->search(ID);
+
+	string cmdTempAS = sv->key + "," + to_string(sv->numberSub) + "," + to_string(sv->scoreStack.top()) + "\n";
+	myfileAS << cmdTempAS;
+
+	//<-----print to listSV.csv max score of subs----->//
 	myfile.open(pathListSV);
 	myfile << "MSSV, So lan nop, Diem cao nhat\n";
-
-	if (dataIN->root == NULL) 
-		return;
-	
 	//traverse avlTree data to find all MSSV
 	node *current = dataIN->root;
  
@@ -424,7 +440,6 @@ void exportScore(path workingDir, avlTree* dataIN) {
 
 				//process here
 
-
 				string cmdTemp = current->key + "," + to_string(current->numberSub) + "," + to_string(current->scoreHeap->getMax()) + "\n" ;
 				myfile << cmdTemp;
 
@@ -438,10 +453,12 @@ void exportScore(path workingDir, avlTree* dataIN) {
 		}
 	} /* end of while */
 	myfile.close();
+	myfileAS.close();
 
 	std::ofstream outTree("avl.dat");
 	dataIN->saveAVL(dataIN->root, outTree);
 	outTree.close();
+
 }
  
 void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
@@ -487,6 +504,7 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
  
 	node *SV = dataIn->search(ID);
  
+	SV->scoreStack.push(score1*0.3 + score2*0.7);
 	SV->scoreHeap->heapInsert(score1*0.3 + score2*0.7);
 	return;
 }
@@ -552,7 +570,9 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 				scoreOutput(workingDir, ID, fileChange, i+1, numTestcase);
 				remove(reNameDAFile);
 			}
-
+			//xoa obj exe
+			string cmdClean = cdDirectory + " && make -f makefile" + to_string(j) + " clean";
+			system(cmdClean.c_str());
 		}
 
 
