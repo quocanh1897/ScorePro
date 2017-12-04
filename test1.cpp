@@ -11,19 +11,23 @@
 #include<thread>
 
 using namespace boost::filesystem;
-
+struct Checker {
+	bool* startRun = new bool(false);
+	string* nameExe = new string("");
+	bool* signal = new bool(false);
+};
 //------------->>>>  PROTOTYPE  <<<<-------------//
 
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
 bool CopyfileStoW(path workingDir, path submitFol, string ID, string sub);
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir);
+bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe);
 bool CreateXML(path submitfolder, string ID, string sub);
 
 void exportScore(path workingDir, avlTree* dataIN);
 int compileFile(path FolderWD, string ID, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
-void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count);
+void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe);
 void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn);
 
 
@@ -218,7 +222,7 @@ bool CreateXML(path submitfolder, string ID, string sub) {
 	return 1;
 }
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir) {
+bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe) {
 
 	//duyet tuan tu file submitFolder
 	for (directory_iterator file(submitFolder); file != directory_iterator(); ++file) {
@@ -259,7 +263,7 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir) {
 				int count=compileFile(workingDir, ID, sub);
 				//--------------------------------//
 
-				runThenScoreFileSub(workingDir, ID, dataID, numOfSub,count);
+				runThenScoreFileSub(workingDir, ID, dataID, numOfSub, count, checkErrorExe);
 
 				exportScore(workingDir, dataID);
 			}
@@ -487,7 +491,7 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
 	return;
 }
 
-void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count) {
+void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count,Checker* checkErrorExe) {
 	node *numofSub = dataID->search(ID);
  
 	if (numofSub == NULL) {
@@ -506,6 +510,9 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 
 		//run code per objFile
 		for (int j = 1; j <= count;j++) {
+			string cdDirectory = "pushd " + (workingDir / ID / s).string();
+			string cmdCreateExe= cdDirectory + " && make -f makefile" + to_string(j) + " createexe";
+			system(cmdCreateExe.c_str());
 			for (int numTestcase = 1; numTestcase <= 5; numTestcase++) {
 				//copy testcase\input1.txt -> build\input.txt
 				string fileChange = to_string(j);
@@ -515,9 +522,18 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 				path reNameInputFile = build / tempname;
 				copy_file(inputFile, reNameInputFile);
 
-				string cdDirectory = "pushd " + (workingDir / ID / s).string();
-				string cmdRunFileToScore = cdDirectory + " && make -f makefile" + fileChange + " run";
+				
+				string cmdRunFileToScore = cdDirectory + " && cd build && " + fileChange + ".exe";
+				//tin hie.u startRun =true
+				*(checkErrorExe->nameExe) = fileChange; *(checkErrorExe->startRun) = true;
 				system(cmdRunFileToScore.c_str());
+				//neu on thi reset startRun
+				*(checkErrorExe->startRun) = false;
+				//signal tra ve true khi file exe co van de
+				if (*(checkErrorExe->signal)) {
+					*(checkErrorExe->signal) = false;
+					break;
+				}
 				path objfile{ workingDir / ID / s / "build" / (fileChange + ".obj").c_str() };
 				if (!exists(objfile)) break;
 
@@ -545,10 +561,10 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 
 }
  
-void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir) {
+void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* checkErrorExe) {
  
 	while (1) {
-		checkID(DataID, submitFolder, workingDir);
+		checkID(DataID, submitFolder, workingDir, checkErrorExe);
 	}
 }
  
@@ -610,13 +626,46 @@ void settingConfig(path &SF, path &WD, path &uploadedFolder) {
 	path t3(uploaded);
 	uploadedFolder = t3;
 }
+//checkerError
+void checkErrorExe(Checker* checkErrorExe) {
+	//signal dung de phat hien exe co van de, va se khong thuc thi tiep
+	//bat dau dem thoi gian
+	std::ifstream ifs("settings.config");
+	string line;
+	getline(ifs, line);	getline(ifs, line);	getline(ifs, line); getline(ifs, line);
 
+	int star1 = line.find("\"");
+	int star2 = star1 + line.substr(star1 + 1, line.length() - 1).find("\"");
+	string t = line.substr(star1 + 1, star2);
+	string temp = t.substr(0, t.find("\""));
+	stringstream ss(temp);
+	float time = 5;
+	ss >> time;
 
+	if (!*(checkErrorExe->startRun)) return;
+	double startTime = clock();
+	while (1) {
+		if (!*(checkErrorExe->startRun)) break;
+		double deltaTime = (clock() - startTime) / (double)CLOCKS_PER_SEC;
+		//co hoi cuoi cung la x sec cho sv
+		if (deltaTime > time) {
+			*(checkErrorExe->signal) = true;
+			string cmd = "pushd C:\\Windows\\System32 && Taskkill /F /IM " + *(checkErrorExe->nameExe) + ".exe";
+			system(cmd.c_str());
+			break; }
+	}
+	*(checkErrorExe->nameExe) = "";
+	*(checkErrorExe->startRun) = false;
+}
+void ThreadCheckErrorExe(Checker* ErrorExe) {
+	while (1) {
+		checkErrorExe(ErrorExe);
+	}
+}
 
 int main() {
-
+	Checker* checkErrorExe = new Checker();
 	path submitFolder, workingDir, uploadedFolder;
-
 	settingConfig(submitFolder, workingDir, uploadedFolder);
 	
 	avlTree* DataID=new avlTree();
@@ -624,10 +673,12 @@ int main() {
 	std::ifstream inTree("avl.dat");
 	DataID->loadAVL(DataID->root, inTree);
 	inTree.close();
-	thread t1(ThreadCompile, DataID, submitFolder, workingDir);
+	thread t1(ThreadCompile, DataID, submitFolder, workingDir,checkErrorExe);
 	thread t2(ThreadPrepareCompile, DataID, submitFolder);
+	thread t3(ThreadCheckErrorExe,checkErrorExe);
 	t1.join();
 	t2.join();
+	t3.join();
 	//while(1) {
 		//PrepareCompile(submitFolder);
 	//}
