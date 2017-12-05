@@ -119,23 +119,22 @@ bool CopyfileStoW(path workingDir, path submitFol,string ID,string sub) {
 	return false;
 }
 
-bool Replacefile(path IDFolder, string newsub,Heap* Priority) {
-	string gettime;
+bool Replacefile(path IDFolder, string newsub) {
 	bool flag = false;//da tim thay quantity chua
 	int quantity = 0;//so luong file
 	int count = 0;//dem
-	//xet xem co phai thu muc hoan toan la folder khong
+				  //xet xem co phai thu muc hoan toan la folder khong
 	int isAllDir = true;
 	for (directory_iterator file(IDFolder); file != directory_iterator(); ++file) {
 		string curFileName = file->path().filename().string();
-		path desFileName =	newsub / curFileName;
+		path desFileName = newsub / curFileName;
 		//dem file
 		if (is_directory(file->path())) continue;
 		else isAllDir = false;//neu k phai folder -> false;
 		count++;
 		if (exists(newsub / curFileName)) return true;
-		copy_file(file->path(),newsub/curFileName);
-		
+		copy_file(file->path(), newsub / curFileName);
+
 		//tim so luong file
 		if (!curFileName.compare("pro.xml")) {
 			//chuyen string ve char* de dung ham doc
@@ -157,15 +156,8 @@ bool Replacefile(path IDFolder, string newsub,Heap* Priority) {
 			TiXmlElement* root = doc.RootElement();
 			TiXmlElement* child1 = root->FirstChildElement();
 			while (child1) {
-				string quan = "quantity";
-				string time = "time";
-				if (!time.compare(child1->ValueTStr().c_str()))
-				{
-					gettime =child1->GetText();
-					AddPriority(Priority,gettime, IDFolder.filename().string());
-					
-				}
-				if (!quan.compare(child1->ValueTStr().c_str()))
+				string temp = "quantity";
+				if (!temp.compare(child1->ValueTStr().c_str()))
 				{
 					quantity = atoi(child1->GetText());
 					flag = true;
@@ -627,7 +619,23 @@ void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* 
 		checkID(DataID, submitFolder, workingDir, checkErrorExe,Priority);
 	}
 }
- 
+void Traverse(path submitFolder, Heap* Priority,avlTree* DataID) {
+	for (directory_iterator fileID(submitFolder); fileID != directory_iterator(); ++fileID) {
+		int count = 0;
+		node* IDNode = DataID->search(fileID->path().filename().string());
+		if (!IDNode) continue;
+		if (IDNode->isLoading) continue;
+		for (directory_iterator file(fileID->path()); file != directory_iterator(); ++file) 
+			if (is_directory(file->path())) {
+				count++;
+			}
+			else continue;
+		if (count > IDNode->numberSub) {
+				IDNode->numberSub++;
+				ReadXML(fileID->path(), "sub" + to_string(IDNode->numberSub), Priority);
+		}
+	}
+ }
 void PrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
  
 	for (directory_iterator fileID(submitFolder); fileID != directory_iterator(); ++fileID) {
@@ -638,36 +646,33 @@ void PrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
 		int count = 0;
 		//co su thay doi gi khong-> co can sinh file khong
 		bool CanCreateSub = 0;
-		for (directory_iterator file(fileID->path()); file != directory_iterator(); ++file) {
+		for (directory_iterator file(fileID ->path()); file != directory_iterator(); ++file) {
 			if (is_directory(file->path())) { 
 				count++;
-				if (count > IDNode->numberSub) {
-					ReadXML(fileID->path(), file->path().filename().string(), Priority);
-					IDNode->numberSub++;
-				}
 			}
 			else CanCreateSub = 1;
 		}
+
 		//neu khong can tao folder thi continue
-		if (!CanCreateSub) continue;
- 
-		
- 
-		IDNode->isLoading = true;
-		//tao sub moi
-		path newsub = fileID->path() / ("sub" + to_string(count + 1)).c_str();
-		create_directory(newsub);
-		while (1) {
-			if (Replacefile(fileID->path(), newsub.string(),Priority)) break;
+		if (!CanCreateSub) {
+			continue;
 		}
-		IDNode->numberSub++;
-		IDNode->isLoading = false;
+			IDNode->isLoading = true;
+			//tao sub moi
+			path newsub = fileID->path() / ("sub" + to_string(count + 1)).c_str();
+			create_directory(newsub);
+			while (1) {
+				if (Replacefile(fileID->path(), newsub.string())) break;
+			}
+
+			IDNode->isLoading = false;
 	}
 }
  
 void ThreadPrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
  
 	while (1) {
+		Traverse(submitFolder, Priority, DataID);
 		PrepareCompile(DataID,submitFolder,Priority);
 	}
 }
