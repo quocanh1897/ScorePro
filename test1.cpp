@@ -10,7 +10,7 @@
 #include<algorithm>
 #include<thread>
 #include <boost/date_time.hpp>
-
+#include <boost/thread.hpp>
 using namespace boost::filesystem;
 struct Checker {
 	bool* startRun = new bool(false);
@@ -23,14 +23,12 @@ bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
 bool CopyfileStoW(path workingDir, path submitFol, string ID, string sub);
 
 bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe,Heap* Priority);
-bool CreateXML(path submitfolder, string ID, string sub);
-
 void exportScore(path workingDir, avlTree* dataIN, string ID);
 int compileFile(path FolderWD, string ID, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
 void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe);
 void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn);
-void AddPriority(Heap* Priority, string gettime, string ID);
+void AddPriority(Heap* Priority, string gettime, string ID,string subject);
 
 //------------->>>>  IMPLEMENT <<<<-------------//
 
@@ -175,6 +173,7 @@ bool Replacefile(path IDFolder, string newsub) {
 }
 void ReadXML(path IDFolder, string sub, Heap* Priority) {
 	string gettime;
+	string subject;
 	string curFileName = "pro.xml";
 	path desFileName = IDFolder / sub/curFileName;
 	//chuyen string ve char* de dung ham doc
@@ -196,13 +195,17 @@ void ReadXML(path IDFolder, string sub, Heap* Priority) {
 	TiXmlElement* child1 = root->FirstChildElement();
 	while (child1) {
 		string time = "time";
+		string SubjectID = "SubjectID";
 		if (!time.compare(child1->ValueTStr().c_str()))
 			{
 				gettime = child1->GetText();
-				AddPriority(Priority, gettime, IDFolder.filename().string());
 			}
+		else if (!SubjectID.compare(child1->ValueTStr().c_str())) {
+			subject = child1->GetText();
+		}
 		child1 = child1->NextSiblingElement();
 	}
+	AddPriority(Priority, gettime, IDFolder.filename().string(),subject);
 }
 
 bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority) {
@@ -217,7 +220,7 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 		if (!IDNode)
 			return 0;
 		//duyet tuan tu file sub
-		path IDfolder = workingDir / IDNameFolder;
+		path IDfolder = workingDir/temp.subject/ IDNameFolder;
 		if (!exists(IDfolder)) {}
 		else {
 			for (directory_iterator file(IDfolder); file != directory_iterator(); ++file)
@@ -227,14 +230,15 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 				string ID = IDNameFolder;
 				int numOfSub = count;
 				string sub = "sub" + to_string(count);
+				
 				//copy den khi nao du file thi thoi nho` vao quantity trong xml
 				while (1) {
-					if (CopyfileStoW(workingDir, submitFolder, ID, sub) == true) break;
+					if (CopyfileStoW(workingDir/ temp.subject, submitFolder, ID, sub)) break;
 				}
-				if (exists(workingDir / ID / sub / "build")) return 0;
-				int countTest=compileFile(workingDir, ID, sub);
+				if (exists(workingDir/ temp.subject / ID / sub / "build")) return 0;
+				int countTest=compileFile(workingDir/ temp.subject, ID, sub);
 				//--------------------------------//
-				runThenScoreFileSub(workingDir, ID, dataID, numOfSub, countTest, checkErrorExe);
+				runThenScoreFileSub(workingDir/ temp.subject, ID, dataID, numOfSub, countTest, checkErrorExe);
 				return 1;
 }
 
@@ -712,7 +716,7 @@ void ThreadCheckErrorExe(Checker* ErrorExe) {
 		checkErrorExe(ErrorExe);
 	}
 }
-void AddPriority(Heap* Priority, string gettime, string ID) {
+void AddPriority(Heap* Priority, string gettime, string ID,string subject) {
 	stringstream sstr;
 	sstr << gettime;
 	boost::posix_time::ptime timeLocal = boost::posix_time::second_clock::local_time();
@@ -723,7 +727,7 @@ void AddPriority(Heap* Priority, string gettime, string ID) {
 	double timevalue = (timeLocal.date().month().as_enum() - month) * 44640 + (timeLocal.date().day() - day) * 1400 + (timeLocal.time_of_day().hours() - hour) * 60 + (timeLocal.time_of_day().minutes() - min) + (timeLocal.time_of_day().seconds() - second) / (double)60;
 
 	double key = timevalue;
-	Priority->heapInsert(nodeHeap(key, ID));
+	Priority->heapInsert(nodeHeap(key, ID,subject));
 }
 int main() {
 	Checker* checkErrorExe = new Checker();
@@ -735,9 +739,9 @@ int main() {
 	std::ifstream inTree("avl.dat");
 	DataID->loadAVL(DataID->root, inTree);
 	inTree.close();
-	thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
-	thread t2(ThreadCompile, DataID, submitFolder, workingDir,checkErrorExe,Priority);
-	thread t3(ThreadCheckErrorExe,checkErrorExe);
+	boost::thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
+	boost::thread t2(ThreadCompile, DataID, submitFolder, workingDir,checkErrorExe,Priority);
+	boost::thread t3(ThreadCheckErrorExe,checkErrorExe);
 	
 	t1.join();
 	t2.join();
