@@ -11,25 +11,35 @@
 #include<thread>
 #include <boost/date_time.hpp>
 #include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 using namespace boost::filesystem;
+struct threadCount {
+	int count = 0;
+	bool canToNextThread = true;
+};
 struct Checker {
 	bool* startRun = new bool(false);
 	string* nameExe = new string("");
 	bool* signal = new bool(false);
+	void Reset() { *startRun = false; *nameExe = ""; *signal = false; }
 };
+boost::mutex mutex1;
+boost::mutex mutex2;
+boost::mutex mutex3;
+boost::mutex mutex4;
 //------------->>>>  PROTOTYPE  <<<<-------------//
 
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
 bool CopyfileStoW(path workingDir, path submitFol, string ID, string sub);
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe,Heap* Priority);
+bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe,Heap* Priority, threadCount* count);
 void exportScore(path workingDir, avlTree* dataIN, string ID);
 int compileFile(path FolderWD, string ID, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
 void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe);
 void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn);
 void AddPriority(Heap* Priority, string gettime, string ID,string subject);
-
+void ThreadCheckErrorExe(Checker* ErrorExe);
 //------------->>>>  IMPLEMENT <<<<-------------//
 
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub) {
@@ -208,7 +218,7 @@ void ReadXML(path IDFolder, string sub, Heap* Priority) {
 	AddPriority(Priority, gettime, IDFolder.filename().string(),subject);
 }
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority) {
+bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, threadCount* countThread) {
 
 	//duyet tuan tu file submitFolder
 		if (Priority->isEmpty()) return 0;
@@ -221,8 +231,10 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 			return 0;
 		//duyet tuan tu file sub
 		path IDfolder = workingDir/temp.subject/ IDNameFolder;
+		
 		if (!exists(IDfolder)) {}
 		else {
+			mutex1.lock();
 			for (directory_iterator file(IDfolder); file != directory_iterator(); ++file)
 				if (is_directory(file->path())) count++;
 		}
@@ -232,13 +244,18 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 				string sub = "sub" + to_string(count);
 				
 				//copy den khi nao du file thi thoi nho` vao quantity trong xml
+				
 				while (1) {
 					if (CopyfileStoW(workingDir/ temp.subject, submitFolder, ID, sub)) break;
 				}
+				mutex1.unlock();
 				if (exists(workingDir/ temp.subject / ID / sub / "build")) return 0;
 				int countTest=compileFile(workingDir/ temp.subject, ID, sub);
 				//--------------------------------//
+				mutex2.lock();
 				runThenScoreFileSub(workingDir/ temp.subject, ID, dataID, numOfSub, countTest, checkErrorExe);
+				mutex2.unlock();
+				countThread->count -= 1;
 				return 1;
 }
 
@@ -479,7 +496,6 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
 	stringstream tempLine(line);
 	tempLine >> line >> score1;
 	in.close();
-
 	//open scoreOf2 to save score of program2
 	in.open(scoreFile2, ios_base::in);
 	for (int i = 0; i < 5; i++) {
@@ -519,14 +535,13 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
  
 	SV->scoreStack.push(score1*0.3 + score2*0.7);
 	SV->scoreHeap->heapInsert(nodeHeap(score1*0.3 + score2*0.7));
-
 	exportScore(workingDir, dataIn, ID);
 	return;
 }
 
 void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count,Checker* checkErrorExe) {
 	node *numofSub = dataID->search(ID);
- 
+
 	if (numofSub == NULL) {
 		return;
 	}
@@ -540,7 +555,6 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 		if (!exists(build) || exists(scoreFile)) {
 			continue;
 		}
-
 		//run code per objFile
 		for (int j = 1; j <= count;j++) {
 			string cdDirectory = "pushd " + (workingDir / ID / s).string();
@@ -555,7 +569,8 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 				path reNameInputFile = build / tempname;
 				copy_file(inputFile, reNameInputFile);
 
-				
+				thread t3(ThreadCheckErrorExe, checkErrorExe);
+				t3.detach();
 				string cmdRunFileToScore = cdDirectory + " && cd build && " + fileChange + ".exe";
 				//tin hie.u startRun =true
 				*(checkErrorExe->nameExe) = fileChange; *(checkErrorExe->startRun) = true;
@@ -564,7 +579,8 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 				*(checkErrorExe->startRun) = false;
 				//signal tra ve true khi file exe co van de
 				if (*(checkErrorExe->signal)) {
-					*(checkErrorExe->signal) = false;
+					checkErrorExe->Reset();
+					//boost::this_thread::sleep_for(boost::chrono::seconds{ 1 }); //sleep 2s
 					break;
 				}
 				path objfile{ workingDir / ID / s / "build" / (fileChange + ".obj").c_str() };
@@ -589,17 +605,20 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 			string cmdClean = cdDirectory + " && make -f makefile" + to_string(j) + " clean";
 			system(cmdClean.c_str());
 		}
-
-
 		scoreSub(workingDir, ID, i+1, dataID);
 	}
 
 }
  
 void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority) {
- 
+	threadCount* count = new threadCount();
+
 	while (1) {
-		checkID(DataID, submitFolder, workingDir, checkErrorExe,Priority);
+		if (Priority->isEmpty()) continue;
+		if (count->count > 3) continue;
+		count->count += 1;
+		boost::thread t1(checkID, DataID, submitFolder, workingDir, checkErrorExe, Priority, count);
+		t1.detach();
 	}
 }
 void Traverse(path submitFolder, Heap* Priority,avlTree* DataID) {
@@ -644,7 +663,7 @@ void PrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
 			//tao sub moi
 			path newsub = fileID->path() / ("sub" + to_string(count + 1)).c_str();
 			create_directory(newsub);
-			(Replacefile(fileID->path(), newsub.string()));
+			Replacefile(fileID->path(), newsub.string());
 			IDNode->isLoading = false;
 	}
 }
@@ -679,7 +698,7 @@ void settingConfig(path &SF, path &WD, path &uploadedFolder) {
 	uploadedFolder = t3;
 }
 //checkerError
-void checkErrorExe(Checker* checkErrorExe) {
+bool checkErrorExe(Checker* checkErrorExe) {
 	//signal dung de phat hien exe co van de, va se khong thuc thi tiep
 	//bat dau dem thoi gian
 	std::ifstream ifs("settings.config");
@@ -694,7 +713,7 @@ void checkErrorExe(Checker* checkErrorExe) {
 	float time = 5;
 	ss >> time;
 
-	if (!*(checkErrorExe->startRun)) return;
+	if (!*(checkErrorExe->startRun)) return false;
 	double startTime = clock();
 	while (1) {
 		if (!*(checkErrorExe->startRun)) break;
@@ -710,10 +729,11 @@ void checkErrorExe(Checker* checkErrorExe) {
 	}
 	*(checkErrorExe->nameExe) = "";
 	*(checkErrorExe->startRun) = false;
+	return true;
 }
 void ThreadCheckErrorExe(Checker* ErrorExe) {
 	while (1) {
-		checkErrorExe(ErrorExe);
+		if(checkErrorExe(ErrorExe)) return;
 	}
 }
 void AddPriority(Heap* Priority, string gettime, string ID,string subject) {
@@ -739,12 +759,10 @@ int main() {
 	std::ifstream inTree("avl.dat");
 	DataID->loadAVL(DataID->root, inTree);
 	inTree.close();
-	boost::thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
-	boost::thread t2(ThreadCompile, DataID, submitFolder, workingDir,checkErrorExe,Priority);
-	boost::thread t3(ThreadCheckErrorExe,checkErrorExe);
+	thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
+	t1.detach();
 	
-	t1.join();
-	t2.join();
-	t3.join();
+	ThreadCompile(DataID, submitFolder, workingDir, checkErrorExe, Priority);
 
+	
 }
