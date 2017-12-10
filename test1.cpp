@@ -123,55 +123,55 @@ bool Replacefile(path IDFolder, string newsub) {
 	bool flag = false;//da tim thay quantity chua
 	int quantity = 0;//so luong file
 	int count = 0;//dem
-				  //xet xem co phai thu muc hoan toan la folder khong
-	int isAllDir = true;
-	for (directory_iterator file(IDFolder); file != directory_iterator(); ++file) {
-		string curFileName = file->path().filename().string();
-		path desFileName = newsub / curFileName;
-		//dem file
-		if (is_directory(file->path())) continue;
-		else isAllDir = false;//neu k phai folder -> false;
-		count++;
-		if (exists(newsub / curFileName)) return true;
-		copy_file(file->path(), newsub / curFileName);
+	while (1) {
+		//quet file trong folder ID
+		for (directory_iterator file(IDFolder); file != directory_iterator(); ++file) {
+			string curFileName = file->path().filename().string();
+			path desFileName = newsub / curFileName;
+			//dem file
+			if (is_directory(file->path())) continue;
+			count++;
 
-		//tim so luong file
-		if (!curFileName.compare("pro.xml")) {
-			//chuyen string ve char* de dung ham doc
-			char * writable = new char[desFileName.string().size() + 1];
-			for (int i = 0; i < desFileName.string().length() + 1; i++) {
-				if (i == desFileName.string().length())
-					writable[i] = '\0';
-				else
-					writable[i] = desFileName.string()[i];
+			if (exists(newsub / curFileName)) return true;
+			if (!exists(file->path())) return false;
+			copy_file(file->path(), newsub / curFileName); //copy file sang file sub
+			//neu la file pro.xml lay ra quantity
+			if (!curFileName.compare("pro.xml")) {
+				//chuyen string ve char* de dung ham doc
+				char * writable = new char[desFileName.string().size() + 1];
+				for (int i = 0; i < desFileName.string().length() + 1; i++) {
+					if (i == desFileName.string().length())
+						writable[i] = '\0';
+					else
+						writable[i] = desFileName.string()[i];
 
+				}
+				remove(file->path());
+				TiXmlDocument doc(writable);
+				if (!doc.LoadFile())
+				{
+					//printf("%s", doc.ErrorDesc());
+					return 0;
+				}
+				TiXmlElement* root = doc.RootElement();
+				TiXmlElement* child1 = root->FirstChildElement();
+				while (child1) {
+					string temp = "quantity";
+					if (!temp.compare(child1->ValueTStr().c_str()))
+					{
+						quantity = atoi(child1->GetText());
+						flag = true;
+						if (quantity == count&&flag) return true;
+						break;
+					}
+					child1 = child1->NextSiblingElement();
+				}
 			}
 			remove(file->path());
-			TiXmlDocument doc(writable);
-			if (!doc.LoadFile())
-			{
-				//printf("%s", doc.ErrorDesc());
-				return 0;
-			}
-			TiXmlElement* root = doc.RootElement();
-			TiXmlElement* child1 = root->FirstChildElement();
-			while (child1) {
-				string temp = "quantity";
-				if (!temp.compare(child1->ValueTStr().c_str()))
-				{
-					quantity = atoi(child1->GetText());
-					flag = true;
-					if (quantity == count&&flag) return true;
-					break;
-				}
-				child1 = child1->NextSiblingElement();
-			}
+			if (quantity == count&&flag) return true;
 		}
-		remove(file->path());
-		if (quantity == count&&flag) return true;
 	}
-	if (isAllDir) return true;
-	return false;
+	return true;
 }
 void ReadXML(path IDFolder, string sub, Heap* Priority) {
 	string gettime;
@@ -205,55 +205,6 @@ void ReadXML(path IDFolder, string sub, Heap* Priority) {
 	}
 }
 
-bool CreateXML(path submitfolder, string ID, string sub) {
-
-	//tao file xml
-	path subfile = submitfolder / ID / sub;
-	path exist = subfile / "pro.xml";
-	if (exists(exist)) return 0;
-	TiXmlDocument doc;
-	TiXmlDeclaration *dec = new TiXmlDeclaration("1.0", "UTF-8", "");
-	doc.LinkEndChild(dec);
-	//root
-	TiXmlElement* root = new TiXmlElement("Source");
-	doc.LinkEndChild(root);
-
-	int i = 0;
-	//file
-
-	for (directory_iterator file(subfile); file != directory_iterator(); ++file) {
-		string namefile = file->path().filename().string();//lay ra ten ID
-		string str = namefile.substr(namefile.find(".") + 1, namefile.length() - 1);
-		const char* duoi = str.c_str();
-		const char* file_name = namefile.c_str();
-		TiXmlElement* child = new TiXmlElement(duoi);
-		TiXmlText *file_name_text = new TiXmlText(file_name);
-		root->LinkEndChild(child);
-		child->LinkEndChild(file_name_text);
-		i++;
-	}
-	{
-		TiXmlElement* child = new TiXmlElement("xml");
-		TiXmlText *file_name_text = new TiXmlText("pro.xml");
-		root->LinkEndChild(child);
-		child->LinkEndChild(file_name_text);
-	}
-	{
-		TiXmlElement* quantity = new TiXmlElement("quantity");
-		root->LinkEndChild(quantity);
-		TiXmlText *quantity_num = new TiXmlText(to_string(i + 1).c_str());
-		quantity->LinkEndChild(quantity_num);
-	}
-	path xmlfile = subfile / "pro.xml";
-	string link = xmlfile.string();
-	const char* s1 = link.c_str();
-	//char* temp = new char(xmlfile.string().length() + 1);
-	//memcpy(temp, s0, xmlfile.string().length() + 1);
-	doc.SaveFile(s1);
-
-	return 1;
-}
-
 bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority) {
 
 	//duyet tuan tu file submitFolder
@@ -269,8 +220,8 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 		path IDfolder = workingDir / IDNameFolder;
 		if (!exists(IDfolder)) {}
 		else {
-			for (directory_iterator file(IDfolder); file != directory_iterator(); ++file) 
-				count++;
+			for (directory_iterator file(IDfolder); file != directory_iterator(); ++file)
+				if (is_directory(file->path())) count++;
 		}
 				if (IDNode->isLoading) return 0;//neu fileID dang load thi di ra ngoai
 				string ID = IDNameFolder;
@@ -411,12 +362,38 @@ void exportScore(path workingDir, avlTree* dataIN, string ID) {
 
 	path listSV = workingDir / "listSV.csv";
 	path listAllSubSV = workingDir / "listAllSubSV.csv";
+	path scoreOfSV = workingDir / ID / "scoreOfSV.csv";
+	path maxScoreSV = workingDir / ID / "maxScore.csv";
+
 	string pathListSV = listSV.string();
 	string pathListAllSubSV = listAllSubSV.string(); 
+	string pathScoreOfSV = scoreOfSV.string();
+	string pathMaxScore = maxScoreSV.string();
+
 	std::ofstream myfile;
 	std::ofstream myfileAS;
-	
-	//<-----print to listAllSubSV.csv all of subs ----->//
+	std::ofstream myfileSV;
+	std::ofstream myfileMax;
+
+	//<-----print to scoreOfSV.csv all of subs __ PUT 1 FILE/FOLDER ID----->//
+	if (!exists(scoreOfSV)) {
+		myfileSV.open(pathScoreOfSV);
+		myfileSV << "MSSV, Lan nop, Diem\n";
+		myfileSV.close();
+	}
+	myfileSV.open(pathScoreOfSV, ios_base::app);
+	node *sv1 = dataIN->search(ID);
+	string cmdTempSV = sv1->key + "," + to_string(sv1->numberSub) + "," + to_string(sv1->scoreStack.top()) + "\n";
+	myfileSV << cmdTempSV;
+
+	//<-----print to maxScore.csv __ PUT 1 FILE/FOLDER ID----->//
+	myfileMax.open(pathMaxScore);
+	myfileMax << "MSSV, So lan nop, Diem cao nhat\n";
+	node *sv2 = dataIN->search(ID);
+	string cmdTempMax = sv2->key + "," + to_string(sv2->numberSub) + "," + to_string(sv2->scoreHeap->getMax()) + "\n";
+	myfileMax << cmdTempMax;
+
+	//<-----print to listAllSubSV.csv all of subs __ 1 FILE----->//
 	if (!exists(listAllSubSV)) {
 		myfileAS.open(pathListAllSubSV);
 		myfileAS << "MSSV, Lan nop, Diem\n";
@@ -428,7 +405,7 @@ void exportScore(path workingDir, avlTree* dataIN, string ID) {
 	string cmdTempAS = sv->key + "," + to_string(sv->numberSub) + "," + to_string(sv->scoreStack.top()) + "\n";
 	myfileAS << cmdTempAS;
 
-	//<-----print to listSV.csv max score of subs----->//
+	//<-----print to listSV.csv max score of subs __ 1 FILE----->//
 	myfile.open(pathListSV);
 	myfile << "MSSV, So lan nop, Diem cao nhat\n";
 	//traverse avlTree data to find all MSSV
@@ -467,7 +444,9 @@ void exportScore(path workingDir, avlTree* dataIN, string ID) {
 	} /* end of while */
 	myfile.close();
 	myfileAS.close();
-
+	myfileSV.close();
+	myfileMax.close();
+	
 	std::ofstream outTree("avl.dat");
 	dataIN->saveAVL(dataIN->root, outTree);
 	outTree.close();
@@ -626,10 +605,10 @@ void Traverse(path submitFolder, Heap* Priority,avlTree* DataID) {
 		if (!IDNode) continue;
 		if (IDNode->isLoading) continue;
 		for (directory_iterator file(fileID->path()); file != directory_iterator(); ++file) 
-			if (is_directory(file->path())) {
-				count++;
+			if (!is_directory(file->path())) {
+				continue;
 			}
-			else continue;
+			else count++;
 		if (count > IDNode->numberSub) {
 				IDNode->numberSub++;
 				ReadXML(fileID->path(), "sub" + to_string(IDNode->numberSub), Priority);
@@ -661,10 +640,7 @@ void PrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
 			//tao sub moi
 			path newsub = fileID->path() / ("sub" + to_string(count + 1)).c_str();
 			create_directory(newsub);
-			while (1) {
-				if (Replacefile(fileID->path(), newsub.string())) break;
-			}
-
+			(Replacefile(fileID->path(), newsub.string()));
 			IDNode->isLoading = false;
 	}
 }
@@ -745,8 +721,8 @@ void AddPriority(Heap* Priority, string gettime, string ID) {
 	sstr >> month >> a[0] >> day >> a[1] >> hour >> a[2] >> min >> a[3] >> second;
 	//create key priority
 	double timevalue = (timeLocal.date().month().as_enum() - month) * 44640 + (timeLocal.date().day() - day) * 1400 + (timeLocal.time_of_day().hours() - hour) * 60 + (timeLocal.time_of_day().minutes() - min) + (timeLocal.time_of_day().seconds() - second) / (double)60;
-	int heso = atoi(ID.c_str())/100000;
-	double key = timevalue*heso;
+
+	double key = timevalue;
 	Priority->heapInsert(nodeHeap(key, ID));
 }
 int main() {
@@ -759,13 +735,12 @@ int main() {
 	std::ifstream inTree("avl.dat");
 	DataID->loadAVL(DataID->root, inTree);
 	inTree.close();
+	thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
 	thread t2(ThreadCompile, DataID, submitFolder, workingDir,checkErrorExe,Priority);
-	thread t1(ThreadPrepareCompile, DataID, submitFolder,Priority);
 	thread t3(ThreadCheckErrorExe,checkErrorExe);
+	
 	t1.join();
 	t2.join();
 	t3.join();
-	//
-	//std::cout << "Current System Time = " << (double) << std::endl;
-	//system("pause");
+
 }
