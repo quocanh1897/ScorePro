@@ -341,6 +341,17 @@ public:
 		loadAVL(p->left, fin);
 		loadAVL(p->right, fin);
 	}
+	void CopyToAVL(node* root,avlTree* other) {
+		if (root == NULL) return;
+		else
+		{
+			node* temp = other->search(root->key);
+			if (!temp) other->AVLInsert(other->root, new node(root->key, root->numberSub), other->taller);
+			else temp->numberSub+=root->numberSub;
+			CopyToAVL(root->left, other);
+			CopyToAVL(root->right, other);
+		}
+	}
 };
 bool operator >(string a, string b) {
 	if (a.compare(b) > 0) return true;
@@ -355,4 +366,34 @@ bool operator !=(string a, string b) {
 	else return false;
 }
 
-
+struct AvlSubject {
+	int num = 0;
+	avlTree** Root = NULL;
+	string* nameSubject = NULL;
+	void BuildSubject(int num) {
+		this->num = num;
+		this->Root = new avlTree*[num];
+		nameSubject = new string[num];
+		for (int i = 0; i < num; i++)
+			this->Root[i] = new avlTree();
+	}
+	void LoadData() {
+		for (int i = 0; i < num; i++)
+		{
+			std::ifstream inTree(nameSubject[i] + ".dat");
+			this->Root[i]->loadAVL(Root[i]->root, inTree);
+			inTree.close();
+		}
+	}
+	avlTree* GetavlData(string name) {
+		int index = 0;
+		for (int i = 0; i<num; i++)
+			if (!name.compare(nameSubject[i])) { index = i; break; }
+		return Root[index];
+	}
+	void loadToOtherAVL(avlTree* other) {
+		for (int i = 0; i < num; i++) {
+			Root[i]->CopyToAVL(Root[i]->root, other);
+		}
+	}
+};
