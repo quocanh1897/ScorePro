@@ -1,15 +1,16 @@
 ﻿  test1.cpp
-test1.cpp(98): warning C4018: '<': signed/unsigned mismatch
-test1.cpp(150): warning C4018: '<': signed/unsigned mismatch
-test1.cpp(191): warning C4018: '<': signed/unsigned mismatch
-test1.cpp(299): warning C4101: 'a': unreferenced local variable
-test1.cpp(536): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-test1.cpp(537): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-test1.cpp(750): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+test1.cpp(88): warning C4018: '<': signed/unsigned mismatch
+test1.cpp(133): warning C4018: '<': signed/unsigned mismatch
+test1.cpp(185): warning C4018: '<': signed/unsigned mismatch
+test1.cpp(226): warning C4018: '<': signed/unsigned mismatch
+test1.cpp(337): warning C4101: 'a': unreferenced local variable
+test1.cpp(574): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+test1.cpp(575): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+test1.cpp(787): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   Generating code
-  2 of 1821 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
+  3 of 1834 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    32 functions had inline decision re-evaluated but remain unchanged
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   testBoostLib.vcxproj -> C:\Users\Dang Phu Trung Tin\Desktop\ScorePro\Release\testBoostLib.exe
   testBoostLib.vcxproj -> C:\Users\Dang Phu Trung Tin\Desktop\ScorePro\Release\testBoostLib.pdb (Full PDB)

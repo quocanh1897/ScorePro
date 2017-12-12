@@ -1,4 +1,4 @@
-#include <boost/filesystem.hpp>
+﻿#include <boost/filesystem.hpp>
 #include <iostream>
 #include <string>
 #include "tinyxml.h"
@@ -15,7 +15,6 @@
 using namespace boost::filesystem;
 struct threadCount {
 	int count = 0;
-	bool canToNextThread = true;
 };
 struct Checker {
 	bool* startRun = new bool(false);
@@ -26,18 +25,17 @@ struct Checker {
 boost::mutex mutex1;
 boost::mutex mutex2;
 boost::mutex mutex3;
-boost::mutex mutex4;
 //------------->>>>  PROTOTYPE  <<<<-------------//
 
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
-bool CopyfileStoW(path workingDir, path submitFol, string ID, string sub);
+bool CopyfileStoW(path workingDir, path submitFol, nodeHeap ID, int sub);
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe,Heap* Priority, threadCount* count);
-void exportScore(path workingDir, avlTree* dataIN, string ID);
+bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe,Heap* Priority, threadCount* count,AvlSubject* Manager);
+void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName);
 int compileFile(path FolderWD, string ID, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
-void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe);
-void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn);
+void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe,string subjectName);
+void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn,string subjectName);
 void AddPriority(Heap* Priority, string gettime, string ID,string subject);
 void ThreadCheckErrorExe(Checker* ErrorExe);
 //------------->>>>  IMPLEMENT <<<<-------------//
@@ -70,16 +68,53 @@ int compileFile(path FolderWD, string ID, string sub) {
 	return count - 1;
 }
 
-bool CopyfileStoW(path workingDir, path submitFol,string ID,string sub) {
+bool CopyfileStoW(path workingDir, path submitFol, nodeHeap IDnode,int subnum ) {
 	bool flag = false;//da tim thay quantity chua
 	int quantity = 0;//so luong file
-	int count = 0;//dem
+
+	string ID = IDnode.ID;
+	string Subjectsub;
+	string sub = "sub" + to_string(subnum);
 	path IDFolderInWorkingDir = workingDir /ID/sub;
-	path IDFolderInSubmitFol = submitFol /ID/sub;
+	path subFolderInSubmitFol="";
+	int countsub = 0;//bien dem folder sub theo subject
+	for (directory_iterator filesub(submitFol / ID); filesub != directory_iterator(); ++filesub) {
+		subFolderInSubmitFol = filesub->path();
+		string Subject = "";
+		string curFileName = "pro.xml";
+		path desFileName = filesub->path() / curFileName;
+		//chuyen string ve char* de dung ham doc
+		char * writable = new char[desFileName.string().size() + 1];
+		for (int i = 0; i < desFileName.string().length() + 1; i++) {
+			if (i == desFileName.string().length())
+				writable[i] = '\0';
+			else
+				writable[i] = desFileName.string()[i];
+
+		}
+		TiXmlDocument doc(writable);
+		if (!doc.LoadFile())
+		{
+			//printf("%s", doc.ErrorDesc());
+			return 0;
+		}
+		TiXmlElement* root = doc.RootElement();
+		TiXmlElement* child1 = root->FirstChildElement();
+		while (child1) {
+			string SubjectID = "SubjectID";
+			if (!SubjectID.compare(child1->ValueTStr().c_str())) {
+				Subject = child1->GetText();
+			}
+			child1 = child1->NextSiblingElement();
+		}
+		if (!Subject.compare(IDnode.subject)) countsub++;
+		if (countsub == subnum) break;
+	}
 		//this is a brand new IDFolder
 	create_directory(workingDir / ID);
 	create_directory(workingDir / ID/sub);
-	for (directory_iterator file(IDFolderInSubmitFol);file != directory_iterator(); ++file) {
+	int count = 0;//bien dem file trong sub
+	for (directory_iterator file(subFolderInSubmitFol);file != directory_iterator(); ++file) {
 		//dem file da duoc doc sang
 		count++;
 		string curFileName = file->path().filename().string();
@@ -218,7 +253,7 @@ void ReadXML(path IDFolder, string sub, Heap* Priority) {
 	AddPriority(Priority, gettime, IDFolder.filename().string(),subject);
 }
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, threadCount* countThread) {
+bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, threadCount* countThread, AvlSubject* ManagerSubject) {
 
 	//duyet tuan tu file submitFolder
 		if (Priority->isEmpty()) return 0;
@@ -231,10 +266,9 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 			return 0;
 		//duyet tuan tu file sub
 		path IDfolder = workingDir/temp.subject/ IDNameFolder;
-		
+		mutex1.lock();
 		if (!exists(IDfolder)) {}
-		else {
-			mutex1.lock();
+		else {			
 			for (directory_iterator file(IDfolder); file != directory_iterator(); ++file)
 				if (is_directory(file->path())) count++;
 		}
@@ -242,18 +276,22 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 				string ID = IDNameFolder;
 				int numOfSub = count;
 				string sub = "sub" + to_string(count);
-				
 				//copy den khi nao du file thi thoi nho` vao quantity trong xml
 				
 				while (1) {
-					if (CopyfileStoW(workingDir/ temp.subject, submitFolder, ID, sub)) break;
+					if (CopyfileStoW(workingDir/ temp.subject, submitFolder, temp, count)) break;
 				}
 				mutex1.unlock();
 				if (exists(workingDir/ temp.subject / ID / sub / "build")) return 0;
+				//Phan loai
+				avlTree* Phanloai = ManagerSubject->GetavlData(temp.subject);
+				node* nodePhanLoai = Phanloai->search(temp.ID);
+				if (!nodePhanLoai) { Phanloai->AVLInsert(Phanloai->root, new node(temp.ID, 0), Phanloai->taller); nodePhanLoai = Phanloai->search(temp.ID); }
+				nodePhanLoai->numberSub++;
 				int countTest=compileFile(workingDir/ temp.subject, ID, sub);
 				//--------------------------------//
 				mutex2.lock();
-				runThenScoreFileSub(workingDir/ temp.subject, ID, dataID, numOfSub, countTest, checkErrorExe);
+				runThenScoreFileSub(workingDir/ temp.subject, ID, Phanloai, numOfSub, countTest, checkErrorExe, temp.subject);
 				mutex2.unlock();
 				countThread->count -= 1;
 				return 1;
@@ -377,7 +415,7 @@ void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, 
 	return;
 }
 
-void exportScore(path workingDir, avlTree* dataIN, string ID) {
+void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName) {
 	if (dataIN->root == NULL)
 		return;
 
@@ -468,13 +506,13 @@ void exportScore(path workingDir, avlTree* dataIN, string ID) {
 	myfileSV.close();
 	myfileMax.close();
 	
-	std::ofstream outTree("avl.dat");
+	std::ofstream outTree(subjectName+".dat");
 	dataIN->saveAVL(dataIN->root, outTree);
 	outTree.close();
 
 }
  
-void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
+void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn, string subjectName) {
  
 	int dem = 0;
 	string s = "sub" + to_string(subNumber);
@@ -535,11 +573,11 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn) {
  
 	SV->scoreStack.push(score1*0.3 + score2*0.7);
 	SV->scoreHeap->heapInsert(nodeHeap(score1*0.3 + score2*0.7));
-	exportScore(workingDir, dataIn, ID);
+	exportScore(workingDir, dataIn, ID,subjectName);
 	return;
 }
 
-void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count,Checker* checkErrorExe) {
+void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count,Checker* checkErrorExe,string subjectName) {
 	node *numofSub = dataID->search(ID);
 
 	if (numofSub == NULL) {
@@ -579,8 +617,7 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 				*(checkErrorExe->startRun) = false;
 				//signal tra ve true khi file exe co van de
 				if (*(checkErrorExe->signal)) {
-					checkErrorExe->Reset();
-					//boost::this_thread::sleep_for(boost::chrono::seconds{ 1 }); //sleep 2s
+					checkErrorExe->Reset();//reset checker
 					break;
 				}
 				path objfile{ workingDir / ID / s / "build" / (fileChange + ".obj").c_str() };
@@ -605,19 +642,19 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 			string cmdClean = cdDirectory + " && make -f makefile" + to_string(j) + " clean";
 			system(cmdClean.c_str());
 		}
-		scoreSub(workingDir, ID, i+1, dataID);
+		scoreSub(workingDir, ID, i+1, dataID,subjectName);
 	}
 
 }
  
-void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority) {
+void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, AvlSubject* ManagerSubject) {
 	threadCount* count = new threadCount();
 
 	while (1) {
 		if (Priority->isEmpty()) continue;
 		if (count->count > 3) continue;
 		count->count += 1;
-		boost::thread t1(checkID, DataID, submitFolder, workingDir, checkErrorExe, Priority, count);
+		boost::thread t1(checkID, DataID, submitFolder, workingDir, checkErrorExe, Priority, count,ManagerSubject);
 		t1.detach();
 	}
 }
@@ -754,15 +791,22 @@ int main() {
 	path submitFolder, workingDir, uploadedFolder;
 	settingConfig(submitFolder, workingDir, uploadedFolder);
 	Heap* Priority = new Heap(1000);
-	avlTree* DataID=new avlTree();
-	DataID->root = NULL;
-	std::ifstream inTree("avl.dat");
-	DataID->loadAVL(DataID->root, inTree);
-	inTree.close();
+	avlTree* DataID=new avlTree(); // quanly toan bo submit cua sv
+	//std::ifstream inTree("all.dat");
+	//DataID->loadAVL(DataID->root, inTree);
+	//inTree.close();
+	AvlSubject* SubjectManage = new AvlSubject();
+	SubjectManage->BuildSubject(4);//4 mon
+	SubjectManage->nameSubject[0] = "CTDL";
+	SubjectManage->nameSubject[1] = "KTMT";
+	SubjectManage->nameSubject[2] = "KTLT";
+	SubjectManage->nameSubject[3] = "HTS";
+	SubjectManage->LoadData();
+	SubjectManage->loadToOtherAVL(DataID);
 	thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
 	t1.detach();
 	
-	ThreadCompile(DataID, submitFolder, workingDir, checkErrorExe, Priority);
+	ThreadCompile(DataID, submitFolder, workingDir, checkErrorExe, Priority,SubjectManage);
 
 	
 }
