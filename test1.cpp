@@ -796,11 +796,11 @@ int main() {
 	//DataID->loadAVL(DataID->root, inTree);
 	//inTree.close();
 	AvlSubject* SubjectManage = new AvlSubject();
-	SubjectManage->BuildSubject(4);//4 mon
-	SubjectManage->nameSubject[0] = "CTDL";
+	SubjectManage->BuildSubject();//4 mon
+	/*SubjectManage->nameSubject[0] = "CTDL";
 	SubjectManage->nameSubject[1] = "KTMT";
 	SubjectManage->nameSubject[2] = "KTLT";
-	SubjectManage->nameSubject[3] = "HTS";
+	SubjectManage->nameSubject[3] = "HTS";*/
 	SubjectManage->LoadData();
 	SubjectManage->loadToOtherAVL(DataID);
 	thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
