@@ -8,9 +8,9 @@ test1.cpp(576): warning C4244: 'argument': conversion from 'double' to 'float', 
 test1.cpp(577): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 test1.cpp(792): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   Generating code
-  22 of 1841 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
-    2 functions were new in current compilation
-    44 functions had inline decision re-evaluated but remain unchanged
+  2 of 1841 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    38 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   testBoostLib.vcxproj -> C:\Users\Dang Phu Trung Tin\Desktop\ScorePro\Release\testBoostLib.exe
   testBoostLib.vcxproj -> C:\Users\Dang Phu Trung Tin\Desktop\ScorePro\Release\testBoostLib.pdb (Full PDB)

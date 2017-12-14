@@ -287,12 +287,12 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 		node* nodePhanLoai = Phanloai->search(temp.ID);
 		if (!nodePhanLoai) { Phanloai->AVLInsert(Phanloai->root, new node(temp.ID, 0), Phanloai->taller); nodePhanLoai = Phanloai->search(temp.ID); }
 		nodePhanLoai->numberSub++;
-		nodePhanLoai->timeQueue.push(temp.time);
+		
 
 		int countTest=compileFile(workingDir/ temp.subject, ID, sub);
 		//--------------------------------//
 		mutex2.lock();
-
+		nodePhanLoai->timeQueue.push(temp.time);
 		runThenScoreFileSub(workingDir/ temp.subject, ID, Phanloai, numOfSub, countTest, checkErrorExe, temp.subject);
 		mutex2.unlock();
 		*countThread-= 1;
