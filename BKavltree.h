@@ -370,12 +370,32 @@ struct AvlSubject {
 	int num = 0;
 	avlTree** Root = NULL;
 	string* nameSubject = NULL;
-	void BuildSubject(int num) {
-		this->num = num;
-		this->Root = new avlTree*[num];
-		nameSubject = new string[num];
-		for (int i = 0; i < num; i++)
+	void BuildSubject() {
+		std::ifstream ifs("settings.config");
+		string line;
+		getline(ifs, line); getline(ifs, line); getline(ifs, line); getline(ifs, line); getline(ifs, line); getline(ifs, line);
+		string tempNum  = line.substr(line.find("=") + 1, line.find(":") - line.find("=") - 1);
+		std::stringstream ss(tempNum);
+		ss >> this->num;
+		int t = this->num;
+		t++;
+		string *stringSubject = new string[this->num];
+		string lsj = line.substr(line.find(":") + 1, line.length());
+		stringstream tp(lsj);
+		char token;
+		
+	
+		this->Root = new avlTree*[this->num];
+		nameSubject = new string[this->num];
+		for (int i = 0; i < this->num; i++)
 			this->Root[i] = new avlTree();
+		string test;
+		for (int f = 0; f < this->num; f++) {
+			tp >> test >> token;
+			
+			tp << lsj.substr(nameSubject[f].length(), lsj.length());
+			nameSubject[f] = test;
+		}
 	}
 	void LoadData() {
 		for (int i = 0; i < num; i++)
