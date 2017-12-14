@@ -4,7 +4,7 @@
 #include<sstream>
 #include<stack>
 #include"BKheap.h"
-
+#include<queue>
 using namespace std;
 
 enum status { LH = -1, EH, RH };
@@ -14,7 +14,8 @@ struct node {
 	bool isLoading = 0;
 	Heap *scoreHeap = new Heap(50);
 	stack<float> scoreStack;
-	stack<string> timeStack;
+	queue<string> timeQueue;
+	string HighScoreTime = "";
 	node* left = NULL;
 	node* right = NULL;
 	status balance = EH;
