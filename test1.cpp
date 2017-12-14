@@ -12,7 +12,9 @@
 #include <boost/date_time.hpp>
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
+
 using namespace boost::filesystem;
+
 struct threadCount {
 	int count = 0;
 };
@@ -25,6 +27,8 @@ struct Checker {
 boost::mutex mutex1;
 boost::mutex mutex2;
 boost::mutex mutex3;
+
+
 //------------->>>>  PROTOTYPE  <<<<-------------//
 
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
@@ -38,6 +42,8 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn,string subjectName);
 void AddPriority(Heap* Priority, string gettime, string ID,string subject);
 void ThreadCheckErrorExe(Checker* ErrorExe);
+
+
 //------------->>>>  IMPLEMENT <<<<-------------//
 
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub) {
