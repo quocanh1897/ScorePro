@@ -285,6 +285,7 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 		node* nodePhanLoai = Phanloai->search(temp.ID);
 		if (!nodePhanLoai) { Phanloai->AVLInsert(Phanloai->root, new node(temp.ID, 0), Phanloai->taller); nodePhanLoai = Phanloai->search(temp.ID); }
 		nodePhanLoai->numberSub++;
+		nodePhanLoai->timeStack.push(temp.time);
 		int countTest=compileFile(workingDir/ temp.subject, ID, sub);
 		//--------------------------------//
 		mutex2.lock();
@@ -434,12 +435,12 @@ void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName)
 	//<-----print to scoreOfSV.csv all of subs __ PUT 1 FILE/FOLDER ID----->//
 	if (!exists(scoreOfSV)) {
 		myfileSV.open(pathScoreOfSV);
-		myfileSV << "MSSV, Lan nop, Diem\n";
+		myfileSV << "MSSV, Lan nop, Diem,Thoi gian nop\n";
 		myfileSV.close();
 	}
 	myfileSV.open(pathScoreOfSV, ios_base::app);
 	node *sv1 = dataIN->search(ID);
-	string cmdTempSV = sv1->key + "," + to_string(sv1->numberSub) + "," + to_string(sv1->scoreStack.top()) + "\n";
+	string cmdTempSV = sv1->key + "," + to_string(sv1->numberSub) + "," + to_string(sv1->scoreStack.top()) + "," + sv1->timeStack.top()+ "\n";
 	myfileSV << cmdTempSV;
 
 	//<-----print to maxScore.csv __ PUT 1 FILE/FOLDER ID----->//
@@ -452,13 +453,13 @@ void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName)
 	//<-----print to listAllSubSV.csv all of subs __ 1 FILE----->//
 	if (!exists(listAllSubSV)) {
 		myfileAS.open(pathListAllSubSV);
-		myfileAS << "MSSV, Lan nop, Diem\n";
+		myfileAS << "MSSV, Lan nop, Diem,Thoi Gian Nop\n";
 		myfileAS.close();
 	}
 	myfileAS.open(pathListAllSubSV, ios_base::app);
 	node *sv = dataIN->search(ID);
 
-	string cmdTempAS = sv->key + "," + to_string(sv->numberSub) + "," + to_string(sv->scoreStack.top()) + "\n";
+	string cmdTempAS = sv->key + "," + to_string(sv->numberSub) + "," + to_string(sv->scoreStack.top()) + "," +sv->timeStack.top()+ "\n";
 	myfileAS << cmdTempAS;
 
 	//<-----print to listSV.csv max score of subs __ 1 FILE----->//
@@ -781,9 +782,9 @@ void AddPriority(Heap* Priority, string gettime, string ID,string subject) {
 	sstr >> month >> a[0] >> day >> a[1] >> hour >> a[2] >> min >> a[3] >> second;
 	//create key priority
 	double timevalue = (timeLocal.date().month().as_enum() - month) * 44640 + (timeLocal.date().day() - day) * 1400 + (timeLocal.time_of_day().hours() - hour) * 60 + (timeLocal.time_of_day().minutes() - min) + (timeLocal.time_of_day().seconds() - second) / (double)60;
-
 	double key = timevalue;
-	Priority->heapInsert(nodeHeap(key, ID,subject));
+	string timesub = to_string(day) + "-" + to_string(month)+" " + to_string(hour) + ":" + to_string(min) + ":" + to_string(second);
+	Priority->heapInsert(nodeHeap(key, ID,subject,timesub));
 }
 int main() {
 	Checker* checkErrorExe = new Checker();
@@ -800,6 +801,4 @@ int main() {
 	t1.detach();
 	
 	ThreadCompile(DataID, submitFolder, workingDir, checkErrorExe, Priority,SubjectManage);
-
-	
 }

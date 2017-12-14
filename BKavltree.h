@@ -14,6 +14,7 @@ struct node {
 	bool isLoading = 0;
 	Heap *scoreHeap = new Heap(50);
 	stack<float> scoreStack;
+	stack<string> timeStack;
 	node* left = NULL;
 	node* right = NULL;
 	status balance = EH;
