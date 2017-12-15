@@ -13,6 +13,8 @@
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
 
+#include<queue>
+
 using namespace boost::filesystem;
 
 struct threadCount {
@@ -261,8 +263,6 @@ void ReadXML(path IDFolder, string sub, Heap* Priority) {
 }
 
 bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, int* countThread, AvlSubject* ManagerSubject) {
-
-
 		if (Priority->isEmpty()) return 0;
 		nodeHeap temp;
 		//pop đỉnh heap
@@ -279,7 +279,10 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 			for (directory_iterator file(IDfolder); file != directory_iterator(); ++file)
 				if (is_directory(file->path())) count++;
 		}
-		if (IDNode->isLoading) return 0;//neu fileID dang load thi di ra ngoai
+		if (IDNode->isLoading) {
+			mutex1.unlock(); 
+			return 0;
+		}//neu fileID dang load thi di ra ngoai
 		string ID = IDNameFolder;
 		int numOfSub = count;
 		string sub = "sub" + to_string(count);
@@ -295,9 +298,12 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 		node* nodePhanLoai = Phanloai->search(temp.ID);
 		if (!nodePhanLoai) { Phanloai->AVLInsert(Phanloai->root, new node(temp.ID, 0), Phanloai->taller); nodePhanLoai = Phanloai->search(temp.ID); }
 		nodePhanLoai->numberSub++;
+		
+
 		int countTest=compileFile(workingDir/ temp.subject, ID, sub);
 		//--------------------------------//
 		mutex2.lock();
+		nodePhanLoai->timeQueue.push(temp.time);
 		runThenScoreFileSub(workingDir/ temp.subject, ID, Phanloai, numOfSub, countTest, checkErrorExe, temp.subject);
 		mutex2.unlock();
 		*countThread-= 1;
@@ -444,39 +450,39 @@ void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName)
 	//<-----print to scoreOfSV.csv all of subs __ PUT 1 FILE/FOLDER ID----->//
 	if (!exists(scoreOfSV)) {
 		myfileSV.open(pathScoreOfSV);
-		myfileSV << "MSSV, Lan nop, Diem\n";
+		myfileSV << "MSSV, Lan nop, Diem,Thoi gian nop\n";
 		myfileSV.close();
 	}
 	myfileSV.open(pathScoreOfSV, ios_base::app);
-	node *sv1 = dataIN->search(ID);
-	string cmdTempSV = sv1->key + "," + to_string(sv1->numberSub) + "," + to_string(sv1->scoreStack.top()) + "\n";
+	node *sv = dataIN->search(ID);
+	string cmdTempSV = sv->key + "," + to_string(sv->numberSub) + "," + to_string(sv->scoreStack.top()) + "," + sv->timeQueue.front()+ "\n";
 	myfileSV << cmdTempSV;
-
+	if (sv->scoreStack.top() >= sv->scoreHeap->getMax()) sv->HighScoreTime = sv->timeQueue.front();
 	//<-----print to maxScore.csv __ PUT 1 FILE/FOLDER ID----->//
 	myfileMax.open(pathMaxScore);
-	myfileMax << "MSSV, So lan nop, Diem cao nhat\n";
-	node *sv2 = dataIN->search(ID);
-	string cmdTempMax = sv2->key + "," + to_string(sv2->numberSub) + "," + to_string(sv2->scoreHeap->getMax()) + "\n";
+	myfileMax << "MSSV, So lan nop, Diem cao nhat, Thoi gian nop\n";
+
+	string cmdTempMax = sv->key + "," + to_string(sv->numberSub) + "," + to_string(sv->scoreHeap->getMax()) + "," +sv->HighScoreTime+ "\n";
 	myfileMax << cmdTempMax;
 
 	//<-----print to listAllSubSV.csv all of subs __ 1 FILE----->//
 	if (!exists(listAllSubSV)) {
 		myfileAS.open(pathListAllSubSV);
-		myfileAS << "MSSV, Lan nop, Diem\n";
+		myfileAS << "MSSV, Lan nop, Diem,Thoi Gian Nop, Thoi gian nop\n";
 		myfileAS.close();
 	}
 	myfileAS.open(pathListAllSubSV, ios_base::app);
-	node *sv = dataIN->search(ID);
 
-	string cmdTempAS = sv->key + "," + to_string(sv->numberSub) + "," + to_string(sv->scoreStack.top()) + "\n";
+
+	string cmdTempAS = sv->key + "," + to_string(sv->numberSub) + "," + to_string(sv->scoreStack.top()) + "," +sv->timeQueue.front() + "\n";
 	myfileAS << cmdTempAS;
 
 	//<-----print to listSV.csv max score of subs __ 1 FILE----->//
 	myfile.open(pathListSV);
-	myfile << "MSSV, So lan nop, Diem cao nhat\n";
+	myfile << "MSSV, So lan nop, Diem cao nhat, Thoi gian nop\n";
 	//traverse avlTree data to find all MSSV
 	node *current = dataIN->root;
- 
+	sv->timeQueue.pop();
 	stack<string> tempstack;
 	bool done = 0;
 
@@ -496,7 +502,7 @@ void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName)
 
 				//process here
 
-				string cmdTemp = current->key + "," + to_string(current->numberSub) + "," + to_string(current->scoreHeap->getMax()) + "\n" ;
+				string cmdTemp = current->key + "," + to_string(current->numberSub) + "," + to_string(current->scoreHeap->getMax()) + "," + sv->HighScoreTime + "\n" ;
 				myfile << cmdTemp;
 
 
@@ -650,6 +656,7 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 			system(cmdClean.c_str());
 		}
 		scoreSub(workingDir, ID, i+1, dataID,subjectName);
+		return;
 	}
 
 }
@@ -791,9 +798,9 @@ void AddPriority(Heap* Priority, string gettime, string ID,string subject) {
 	sstr >> month >> a[0] >> day >> a[1] >> hour >> a[2] >> min >> a[3] >> second;
 	//create key priority
 	double timevalue = (timeLocal.date().month().as_enum() - month) * 44640 + (timeLocal.date().day() - day) * 1400 + (timeLocal.time_of_day().hours() - hour) * 60 + (timeLocal.time_of_day().minutes() - min) + (timeLocal.time_of_day().seconds() - second) / (double)60;
-
 	double key = timevalue;
-	Priority->heapInsert(nodeHeap(key, ID,subject));
+	string timesub = to_string(day) + "-" + to_string(month)+" " + to_string(hour) + ":" + to_string(min) + ":" + to_string(second);
+	Priority->heapInsert(nodeHeap(key, ID,subject,timesub));
 }
 int main() {
 	Checker* checkErrorExe = new Checker();
@@ -810,6 +817,4 @@ int main() {
 	t1.detach();
 	
 	ThreadCompile(DataID, submitFolder, workingDir, checkErrorExe, Priority,SubjectManage);
-
-	
 }

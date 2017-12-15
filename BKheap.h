@@ -8,9 +8,12 @@ struct nodeHeap {
 	nodeHeap(float value) { key = value; }
 	nodeHeap(float value, string stringID) { key = value; ID = stringID; }
 	nodeHeap(float value, string stringID, string subjectID) { key = value; ID = stringID; subject = subjectID; }
+	nodeHeap(float value, string stringID, string subjectID, string timesubmit) { key = value; ID = stringID; subject = subjectID; time = timesubmit; }
 	float key = 0;
 	string ID = "";
 	string subject = "";
+	string time = "";
+
 };
 class Heap {//MAX HEAP
 public:
