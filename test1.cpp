@@ -4,15 +4,14 @@
 #include "tinyxml.h"
 #include "BKavltree.h"
 #include <ctime>
-#include<fstream>
-#include<sstream>
-#include<stack>
-#include<algorithm>
-#include<thread>
+#include <fstream>
+#include <sstream>
+#include <stack>
+#include <algorithm>
+#include <thread>
 #include <boost/date_time.hpp>
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
-
 #include<queue>
 
 using namespace boost::filesystem;
@@ -37,12 +36,12 @@ boost::mutex mutex3;
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
 bool CopyfileStoW(path workingDir, path submitFol, nodeHeap ID, int sub);
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe,Heap* Priority, int* count,AvlSubject* Manager);
+bool checkID(avlTree* dataID, path submitFolder, path workingDir, Checker* checkErrorExe,Heap* Priority, int* count,AvlSubject* Manager, queue<int> &ntest);
 void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName);
 int compileFile(path FolderWD, string ID, string sub);
 void scoreOutput(path workingDir, string ID, string fileToScore, int subNumber, int numTestcase);
-void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe,string subjectName);
-void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn,string subjectName);
+void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count, Checker* checkErrorExe,string subjectName, queue<int> &ntest);
+void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn,string subjectName, queue<int> &ntest);
 void AddPriority(Heap* Priority, string gettime, string ID,string subject);
 void ThreadCheckErrorExe(Checker* ErrorExe);
 
@@ -262,7 +261,9 @@ void ReadXML(path IDFolder, string sub, Heap* Priority) {
 	AddPriority(Priority, gettime, IDFolder.filename().string(),subject);
 }
 
-bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, int* countThread, AvlSubject* ManagerSubject) {
+bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, 
+	int* countThread, AvlSubject* ManagerSubject, queue<int> &ntest) {
+
 		if (Priority->isEmpty()) return 0;
 		nodeHeap temp;
 		//pop đỉnh heap
@@ -296,7 +297,11 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 		//Phan loai
 		avlTree* Phanloai = ManagerSubject->GetavlData(temp.subject);
 		node* nodePhanLoai = Phanloai->search(temp.ID);
-		if (!nodePhanLoai) { Phanloai->AVLInsert(Phanloai->root, new node(temp.ID, 0), Phanloai->taller); nodePhanLoai = Phanloai->search(temp.ID); }
+		if (!nodePhanLoai) { 
+			Phanloai->AVLInsert(Phanloai->root, new node(temp.ID, 0), Phanloai->taller); 
+			nodePhanLoai = Phanloai->search(temp.ID); 
+		}
+
 		nodePhanLoai->numberSub++;
 		
 
@@ -304,7 +309,7 @@ bool checkID(avlTree* dataID, path submitFolder, path workingDir,Checker* checkE
 		//--------------------------------//
 		mutex2.lock();
 		nodePhanLoai->timeQueue.push(temp.time);
-		runThenScoreFileSub(workingDir/ temp.subject, ID, Phanloai, numOfSub, countTest, checkErrorExe, temp.subject);
+		runThenScoreFileSub(workingDir/ temp.subject, ID, Phanloai, numOfSub, countTest, checkErrorExe, temp.subject, ntest);
 		mutex2.unlock();
 		*countThread-= 1;
 		return 1;
@@ -525,38 +530,66 @@ void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName)
 
 }
  
-void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn, string subjectName) {
+ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn, string subjectName, queue<int> &ntest) {
  
 	int dem = 0;
 	string s = "sub" + to_string(subNumber);
 	path pathDaFile = workingDir / ID / s / "build";
-	string scoreFile1 = pathDaFile.string() + "\\scoreOf1.txt";
-	string scoreFile2 = pathDaFile.string() + "\\scoreOf2.txt";
-	string totalScore = pathDaFile.string() + "\\score.txt";
+	list<string> scoreOfx; int countscore = 0;
+	//duyet toan thu muc build, dem so luong file scoreOfx
+	for (directory_iterator fileScore(pathDaFile); fileScore != directory_iterator(); ++fileScore) {
+		int t = fileScore->path().filename().string().find("scoreOf");
+		if (t >= 0) {
+			countscore++;
+			scoreOfx.push_back(fileScore->path().filename().string());
+		}
+	}
+	
+	/*string scoreFile1 = pathDaFile.string() + "\\scoreOf1.txt";
+	string scoreFile2 = pathDaFile.string() + "\\scoreOf2.txt";*/
 
+	string totalScore = pathDaFile.string() + "\\score.txt";
 	std::fstream in;
 	string line;
-	float score1 = 0, score2 = 0;
+	//float score1 = 0, score2 = 0;
+	if (countscore == 0) countscore = 2;//min 2 bai
+	float *scoreX = new float(countscore);
+	for (int j = 0; j < countscore; j++) scoreX[j] = 0;
+	int z = 0;
+	for each(string tenfile in scoreOfx) {
+		tenfile = pathDaFile.string() + "\\" + tenfile;
+
+		in.open(tenfile, ios_base::in);
+		for (int i = 0; i < ntest.front(); i++) {
+			string temp;
+			getline(in, temp);
+		}
+		getline(in, line);
+		stringstream tempLine(line);
+		tempLine >> line >> scoreX[z]; z++;
+		in.close();
+		ntest.pop();
+	}
 	//open scoreOf1 to save score of program1
-	in.open(scoreFile1, ios_base::in);
-	for (int i = 0; i < 5; i++) {
-		string temp;
-		getline(in, temp);
-	}
-	getline(in, line);
-	stringstream tempLine(line);
-	tempLine >> line >> score1;
-	in.close();
-	//open scoreOf2 to save score of program2
-	in.open(scoreFile2, ios_base::in);
-	for (int i = 0; i < 5; i++) {
-		string temp;
-		getline(in, temp);
-	}
-	getline(in, line);
-	stringstream tempLine2(line);
-	tempLine2 >> line >> score2;
-	in.close();
+	//in.open(scoreFile1, ios_base::in);
+	//for (int i = 0; i < 5; i++) {
+	//	string temp;
+	//	getline(in, temp);
+	//}
+	//getline(in, line);
+	//stringstream tempLine(line);
+	//tempLine >> line >> score1;
+	//in.close();
+	////open scoreOf2 to save score of program2
+	//in.open(scoreFile2, ios_base::in);
+	//for (int i = 0; i < 5; i++) {
+	//	string temp;
+	//	getline(in, temp);
+	//}
+	//getline(in, line);
+	//stringstream tempLine2(line);
+	//tempLine2 >> line >> score2;
+	//in.close();
 
 	//doc setting thang diem o file config
 	std::ifstream ifs("settings.config");
@@ -577,22 +610,22 @@ void scoreSub(path workingDir, string ID, int subNumber, avlTree* dataIn, string
 
 	std::fstream out;
 	out.open(totalScore, ios_base::app);
-	out << score1*a/100 + score2*b/100;
+	out << scoreX[0]*a/100 + scoreX[1]*b/100;
 	out.close();
 
 	//luu diem vao heap & stack cua rieng tung sinh vien
  
 	node *SV = dataIn->search(ID);
  
-	SV->scoreStack.push(score1*0.3 + score2*0.7);
-	SV->scoreHeap->heapInsert(nodeHeap(score1*0.3 + score2*0.7));
+	SV->scoreStack.push(scoreX[0]*0.3 + scoreX[1]*0.7);
+	SV->scoreHeap->heapInsert(nodeHeap(scoreX[0]*0.3 + scoreX[1]*0.7));
 	exportScore(workingDir, dataIn, ID,subjectName);
 	return;
 }
 
-void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count,Checker* checkErrorExe,string subjectName) {
+void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfSubIn,int count,Checker* checkErrorExe,string subjectName, queue<int> &ntest) {
 	node *numofSub = dataID->search(ID);
-
+	queue<int> temp = ntest;
 	if (numofSub == NULL) {
 		return;
 	}
@@ -611,7 +644,7 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 			string cdDirectory = "pushd " + (workingDir / ID / s).string();
 			string cmdCreateExe= cdDirectory + " && make -f makefile" + to_string(j) + " createexe";
 			system(cmdCreateExe.c_str());
-			for (int numTestcase = 1; numTestcase <= 5; numTestcase++) {
+			for (int numTestcase = 1; numTestcase <= temp.front(); numTestcase++) {
 				//copy testcase\input1.txt -> build\input.txt
 				string fileChange = to_string(j);
 				string inputNum = "testcase\\input" + fileChange + '_' + to_string(numTestcase) + ".txt";
@@ -654,21 +687,23 @@ void runThenScoreFileSub(path workingDir, string ID, avlTree* dataID, int numOfS
 			//xoa obj exe
 			string cmdClean = cdDirectory + " && make -f makefile" + to_string(j) + " clean";
 			system(cmdClean.c_str());
+			temp.pop();
+			if (temp.empty()) break;
 		}
-		scoreSub(workingDir, ID, i+1, dataID,subjectName);
+		scoreSub(workingDir, ID, i+1, dataID,subjectName, ntest);
 		return;
 	}
 
 }
  
-void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, AvlSubject* ManagerSubject) {
+void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* checkErrorExe,Heap* Priority, AvlSubject* ManagerSubject, queue<int> &ntest) {
 	int* count = new int(0);
 
 	while (1) {
 		if (Priority->isEmpty()) continue;
 		if (*count > 3) continue;
 		*count += 1;
-		boost::thread t1(checkID, DataID, submitFolder, workingDir, checkErrorExe, Priority, count,ManagerSubject);
+		boost::thread t1(checkID, DataID, submitFolder, workingDir, checkErrorExe, Priority, count, ManagerSubject, ntest);
 		t1.detach();
 	}
 }
@@ -729,9 +764,9 @@ void ThreadPrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
 	}
 }
 
-void settingConfig(path &SF, path &WD, path &uploadedFolder) {
+void settingConfig(path &SF, path &WD, path &uploadedFolder, queue<int> &ntestcase) {
 	std::ifstream ifs("settings.config");
-	string line, sf, wd, uploaded;
+	string line, sf, wd, uploaded, stringntest;
 
 	getline(ifs, line);
 	sf = line.substr(line.find("\"") + 1, line.find("\"") );
@@ -749,6 +784,19 @@ void settingConfig(path &SF, path &WD, path &uploadedFolder) {
 	uploaded.erase(uploaded.find("\""),1);
 	path t3(uploaded);
 	uploadedFolder = t3;
+
+	getline(ifs, line); getline(ifs, line); getline(ifs, line); getline(ifs, line);
+	char token='\0';
+	int temp;
+	line = line.substr(line.find(":") + 1, line.length());
+	stringstream tp(line);
+	while(token != '.') {
+		tp >> stringntest >> token;
+		stringstream convert(stringntest);
+		convert >> temp;
+		ntestcase.push(temp);
+		tp << line.substr(stringntest.length(), line.length());
+	}
 }
 //checkerError
 bool checkErrorExe(Checker* checkErrorExe) {
@@ -803,11 +851,12 @@ void AddPriority(Heap* Priority, string gettime, string ID,string subject) {
 	Priority->heapInsert(nodeHeap(key, ID,subject,timesub));
 }
 int main() {
+	queue<int> numtestcase;
 	Checker* checkErrorExe = new Checker();
 	path submitFolder, workingDir, uploadedFolder;
-	settingConfig(submitFolder, workingDir, uploadedFolder);
+	settingConfig(submitFolder, workingDir, uploadedFolder, numtestcase);
 	Heap* Priority = new Heap(1000);
-	avlTree* DataID=new avlTree(); // quanly toan bo submit cua sv
+	avlTree* DataID = new avlTree(); // quanly toan bo submit cua sv
 	//loading data
 	AvlSubject* SubjectManage = new AvlSubject();
 	SubjectManage->BuildSubject();//4 mon
@@ -816,5 +865,5 @@ int main() {
 	thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
 	t1.detach();
 	
-	ThreadCompile(DataID, submitFolder, workingDir, checkErrorExe, Priority,SubjectManage);
+	ThreadCompile(DataID, submitFolder, workingDir, checkErrorExe, Priority,SubjectManage, numtestcase);
 }
