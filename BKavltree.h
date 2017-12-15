@@ -20,10 +20,19 @@ struct node {
 	node* right = NULL;
 	status balance = EH;
 	node(string name, int value) { key = name; numberSub = value; }
-	node(string name, int val, float s) { key = name, numberSub = val, scoreHeap->heapInsert(s); }
+	node(string name, int val, float s) { 
+		key = name, numberSub = val, scoreHeap->heapInsert(s);
+	}
+	node(string name, int val, float s, string t) { 
+		key = name, numberSub = val, scoreHeap->heapInsert(s), this->HighScoreTime = t;
+	}
 };
 node* newNode(string namein, int numbersub, float score) {
 	node *res = new node(namein, numbersub, score);
+	return res;
+}
+node* newNode(string namein, int numbersub, float score, string timein) {
+	node *res = new node(namein, numbersub, score, timein);
 	return res;
 }
 node* rotateRight(node* & root) {
@@ -322,6 +331,20 @@ public:
 		}
 	}
 
+	void saveAVLTime(node *p, std::ofstream &out) {
+		if (!p) {
+			out << "#" << endl;
+			//fprintf_s(out, "%s ", "#");
+			return;
+		}
+		else {
+			//fprintf_s(out, "%s*%d*%f", p->key, p->numberSub, p->scoreHeap->getMax());
+			out << p->key << "*" << p->numberSub << "*" << p->scoreHeap->getMax() << "*" << p->HighScoreTime << endl;
+			saveAVLTime(p->left, out);
+			saveAVLTime(p->right, out);
+		}
+	}
+
 	void loadAVL(node *&p, std::ifstream &fin) {
 		string val;
 
@@ -329,9 +352,12 @@ public:
 			return;
 		int star1 = val.find("*");
 		int star2 = star1 + val.substr(star1 + 1, val.length() - 1).find("*");
+		int star3 = star2 + val.substr(star2 + 2, val.length() - 1).find("*");
 		string id = val.substr(0, star1);
-		string numsub = val.substr(star1 + 1, star2);
-		string score = val.substr(star2 + 2, val.length() - 1);
+		string numsub = val.substr(star1 + 1, star2 - star1);
+		string score = val.substr(star2 + 2, star3 - star2 );
+		string hTime = val.substr(star3 + 3, val.length() - star3 - 2);
+
 
 		stringstream temp(numsub);
 		int num;
@@ -339,7 +365,7 @@ public:
 		stringstream temp2(score);
 		float scoref;
 		temp2 >> scoref;
-		p = newNode(id, num, scoref);
+		p = newNode(id, num, scoref, hTime);
 		loadAVL(p->left, fin);
 		loadAVL(p->right, fin);
 	}

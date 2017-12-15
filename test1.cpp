@@ -468,7 +468,7 @@ void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName)
 	//<-----print to listAllSubSV.csv all of subs __ 1 FILE----->//
 	if (!exists(listAllSubSV)) {
 		myfileAS.open(pathListAllSubSV);
-		myfileAS << "MSSV, Lan nop, Diem,Thoi Gian Nop, Thoi gian nop\n";
+		myfileAS << "MSSV, Lan nop, Diem,Thoi Gian Nop\n";
 		myfileAS.close();
 	}
 	myfileAS.open(pathListAllSubSV, ios_base::app);
@@ -499,15 +499,15 @@ void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName)
  
 				current = t1;//node chua MSSV, sub, score
 				tempstack.pop();
-
+				string process = "";
 				//process here
+				if (current->scoreHeap->getMax() < 0)
+					process = "processing";
+				else process = to_string(current->scoreHeap->getMax());
 
-				string cmdTemp = current->key + "," + to_string(current->numberSub) + "," + to_string(current->scoreHeap->getMax()) + "," + sv->HighScoreTime + "\n" ;
+				string cmdTemp = current->key + "," + to_string(current->numberSub) + "," + process + "," + sv->HighScoreTime + "\n" ;
 				myfile << cmdTemp;
 
-
-				/* we have visited the node and its left subtree.
-				Now, it's right subtree's turn */
 				current = current->right;
 			}
 			else
@@ -520,7 +520,7 @@ void exportScore(path workingDir, avlTree* dataIN, string ID,string subjectName)
 	myfileMax.close();
 	
 	std::ofstream outTree(subjectName+".dat");
-	dataIN->saveAVL(dataIN->root, outTree);
+	dataIN->saveAVLTime(dataIN->root, outTree);
 	outTree.close();
 
 }
