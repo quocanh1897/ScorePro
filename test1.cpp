@@ -32,7 +32,7 @@ boost::mutex mutex3;
 
 
 //------------->>>>  PROTOTYPE  <<<<-------------//
-
+bool whenToStop();
 bool DeleteSubFolder(avlTree &Data, path workingDir, string ID, string sub);
 bool CopyfileStoW(path workingDir, path submitFol, nodeHeap ID, int sub);
 
@@ -700,6 +700,7 @@ void ThreadCompile(avlTree* DataID, path submitFolder, path workingDir,Checker* 
 	int* count = new int(0);
 
 	while (1) {
+		if (!whenToStop())return;
 		if (Priority->isEmpty()) continue;
 		if (*count > 3) continue;
 		*count += 1;
@@ -761,6 +762,7 @@ void ThreadPrepareCompile(avlTree* DataID,path submitFolder,Heap* Priority) {
 	while (1) {
 		Traverse(submitFolder, Priority, DataID);
 		PrepareCompile(DataID,submitFolder,Priority);
+		if (!whenToStop()) return;
 	}
 }
 
@@ -850,6 +852,20 @@ void AddPriority(Heap* Priority, string gettime, string ID,string subject) {
 	string timesub = to_string(day) + "-" + to_string(month)+" " + to_string(hour) + ":" + to_string(min) + ":" + to_string(second);
 	Priority->heapInsert(nodeHeap(key, ID,subject,timesub));
 }
+
+bool whenToStop() {
+	string line;
+	std::ifstream ifs("settings.config");
+	for (int i = 0; i < 9; i++) {
+		getline(ifs, line);
+	}
+	string running = line.substr(line.find("=") + 1, line.length());
+	stringstream r(running);
+	r >> running;
+	if (running != "true" && running != "1") 
+		return false;
+}
+
 int main() {
 	queue<int> numtestcase;
 	Checker* checkErrorExe = new Checker();
@@ -864,6 +880,5 @@ int main() {
 	SubjectManage->loadToOtherAVL(DataID);
 	thread t1(ThreadPrepareCompile, DataID, submitFolder, Priority);
 	t1.detach();
-	
 	ThreadCompile(DataID, submitFolder, workingDir, checkErrorExe, Priority,SubjectManage, numtestcase);
 }

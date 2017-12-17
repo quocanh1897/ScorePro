@@ -1,7 +1,18 @@
-﻿  Generating code
-  1 of 2042 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+﻿  test1.cpp
+test1.cpp(96): warning C4018: '<': signed/unsigned mismatch
+test1.cpp(141): warning C4018: '<': signed/unsigned mismatch
+test1.cpp(193): warning C4018: '<': signed/unsigned mismatch
+test1.cpp(234): warning C4018: '<': signed/unsigned mismatch
+test1.cpp(355): warning C4101: 'a': unreferenced local variable
+test1.cpp(556): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+test1.cpp(620): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+test1.cpp(621): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+test1.cpp(853): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  Generating code
+d:\onedrive - vietscience\ctdl\dsa-assignment1-master\test1.cpp(867): warning C4715: 'whenToStop': not all control paths return a value
+  8 of 2044 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    54 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   testBoostLib.vcxproj -> D:\OneDrive - vietscience\CTDL\DSA-Assignment1-master\Release\testBoostLib.exe
   testBoostLib.vcxproj -> D:\OneDrive - vietscience\CTDL\DSA-Assignment1-master\Release\testBoostLib.pdb (Full PDB)
