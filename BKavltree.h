@@ -7,6 +7,9 @@
 #include<stack>
 #include"BKheap.h"
 #include<queue>
+#include<boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
 using namespace std;
 
 enum status { LH = -1, EH, RH };
@@ -425,7 +428,10 @@ struct AvlSubject {
 			
 			tp << lsj.substr(nameSubject[f].length(), lsj.length());
 			nameSubject[f] = test;
+
 		}
+
+
 	}
 	void LoadData() {
 		for (int i = 0; i < num; i++)
